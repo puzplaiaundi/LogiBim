@@ -1,11 +1,1373 @@
-<!DOCTYPE html>
-<html lang="en">
+
+LogiBIM_Modelo_de_datos_y_reglas.html
+100 %
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiBim</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LogiBIM · Modelo de datos y reglas de negocio</title>
+<style>
+:root{--ink:#182c3c;--muted:#506577;--blue:#174f6e;--line:#cbdbe5;--pale:#edf6fa;--green:#136756;--warn:#88542a}
+*{box-sizing:border-box}body{margin:0;background:#f5f8fa;color:var(--ink);font:16px/1.55 system-ui,sans-serif}
+main,header>div,nav>div{width:min(1150px,calc(100% - 48px));margin:auto}
+header{background:#14394e;color:white;border-bottom:7px solid #34a296;padding:38px 0 32px}
+.eyebrow{font-size:.8rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:#a9e6de}
+h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.12;max-width:850px;margin:.25em 0}
+header p{color:#e0eff4;max-width:780px;margin:.7em 0}
+nav{background:white;border-bottom:1px solid var(--line)}nav div{display:flex;gap:8px 20px;flex-wrap:wrap;padding:12px 0}
+a{color:#155a78;text-underline-offset:.16em}nav a{font-size:.9rem;font-weight:650}
+section{padding:25px 0;border-bottom:1px solid var(--line);scroll-margin-top:14px}section:last-child{border:0}
+h2{color:var(--blue);font-size:1.75rem;line-height:1.2;margin:0 0 13px}h3{color:var(--blue);margin:22px 0 6px}
+p{margin:.55rem 0 .9rem}ul,ol{padding-left:1.4em}li{margin:.42em 0}
+.callout{background:var(--pale);border-left:4px solid #309788;padding:12px 16px;margin:15px 0}.warn{border-left-color:#bc7a45;background:#fcf5ea}
+figure{margin:16px 0 20px;border:1px solid var(--line);background:white;border-radius:10px;overflow:hidden}
+.diagram{padding:12px;overflow:auto;text-align:center}.diagram svg{width:auto;max-width:100%;height:auto;vertical-align:middle}
+figcaption{display:flex;gap:8px 16px;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding:9px 14px;background:#edf4f8;font-size:.88rem;font-weight:650}
+.download{font-weight:500}.table{overflow:auto;margin:10px 0 16px}
+table{border-collapse:collapse;width:100%;background:white;font-size:.92rem}th,td{padding:9px 11px;border:1px solid var(--line);vertical-align:top;text-align:left}th{background:#e5eff5;color:#173e55}tbody tr:nth-child(even){background:#f8fbfc}
+code{background:#e9f1f5;border-radius:3px;padding:.08em .24em;color:#1c4b64}small,.muted{color:var(--muted)}.legend{font-size:.9rem;color:var(--muted)}
+footer{padding:18px 0;color:var(--muted);font-size:.84rem}
+@media(max-width:650px){main,header>div,nav>div{width:calc(100% - 24px)}.diagram svg{min-width:660px}.table table{min-width:560px}header{padding:25px 0}}
+@media print{@page{size:A4 landscape;margin:11mm}body{background:white;font-size:10pt}main,header>div,nav>div{width:100%}header{padding:16px 0;color:var(--ink);background:white}.eyebrow,header p{color:var(--blue)}nav,.download{display:none}section{padding:12px 0}figure{break-inside:avoid}.diagram svg{max-height:155mm}tr,h2,h3{break-inside:avoid}h2,h3{break-after:avoid}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style>
 </head>
 <body>
-Hola 
+<header><div>
+<div class="eyebrow">LogiBIM · Diseño funcional v0.1 · 10 de noviembre de 2026</div>
+<h1>Modelo de datos y reglas de negocio</h1>
+<p>Del elemento BIM al componente físico, su embalaje, su entrega y su historial de uso.</p>
+</div></header>
+<nav aria-label="Secciones"><div><a href="#alcance">Alcance</a><a href="#uml">Clases UML</a><a href="#er">Entidad–relación</a><a href="#reglas">Reglas</a><a href="#flujo">Estados y cambios</a><a href="#equilan">Caso Equilan</a><a href="#mvp">Prototipo</a><a href="#fuentes">Fuentes</a></div></nav>
+<main>
+<section id="alcance">
+<h2>1. Alcance y decisiones de diseño</h2>
+<div class="callout"><strong>La ficha logística se consulta por componente.</strong> Reúne la revisión técnica, los vínculos BIM, el suministro, los bultos, las expediciones, la documentación y la trazabilidad. Se genera a partir de esos registros para que cada dato tenga un único responsable.</div>
+<p>El <strong>componente</strong> representa una unidad física trazable, prevista o existente. El <strong>bulto</strong> es la unidad de manipulación. El <strong>envío</strong> agrupa bultos que viajan juntos. La <strong>ficha de embalaje</strong> describe cómo embalar una revisión del componente. El bulto recoge lo que finalmente se preparó y midió.</p>
+<div class="table"><table>
+<thead><tr><th>Decisión</th><th>Consecuencia en la aplicación</th><th>Base</th></tr></thead>
+<tbody>
+<tr><td>Separar BIM y operación logística</td><td>BIM mantiene geometría e información técnica de diseño. LogiBIM mantiene el estado real, el embalaje, las entregas, las incidencias y la documentación logística. El enlace usa un ID común. La API REST es independiente de la herramienta BIM y el flujo opera sin visor 3D integrado.</td><td>Decisión del proyecto. S1, S3, S5.</td></tr>
+<tr><td>Separar tres versiones</td><td>La versión BIM identifica una entrega del modelo. La revisión técnica identifica los datos de una unidad. La liberación fija qué revisión se remitió a fabricación y cuándo se congeló.</td><td>Necesidad de BerriLan. Solución propuesta. S3.</td></tr>
+<tr><td>Representar la recepción por bulto</td><td>Un pedido admite varias expediciones. Un envío se recibe por partes cuando sus bultos se reciben en fechas o resultados diferentes. En el MVP cada unidad trazable viaja entera en un bulto activo. Los desmontajes que requieran varios bultos se registrarán como unidades trazables hijas, después de validar la granularidad.</td><td>Entregas parciales documentadas. Cardinalidad física propuesta. S3, S4.</td></tr>
+<tr><td>Separar expediente y operación</td><td><em>Proyecto</em> en el esquema es la obra o caso logístico, como Equilan. Acciones, indicadores y fechas de la convocatoria pertenecen al seguimiento del proyecto de innovación.</td><td>Propuesta basada en S1 y S2.</td></tr>
+</tbody></table></div>
+<p class="muted">Las cardinalidades, estados, permisos y restricciones de esta versión son propuestas para validar. En cambios de propiedad física, la sustitución de una unidad se registrará con un ID nuevo y un vínculo con la unidad sustituida cuando el piloto confirme esa casuística. Los identificadores de acciones se conservan en dos columnas en la sección de alcance del prototipo.</p>
+</section>
+
+<section id="uml">
+<h2>2. Diagramas de clases UML</h2>
+<p>Las clases muestran quién mantiene cada dato y qué operaciones cambian el estado del proceso. Las multiplicidades indican cuántas instancias pueden relacionarse en cada extremo.</p>
+<figure><div class="diagram"><svg role="img" aria-label="UML 1 · Identidad, BIM y suministro" width="637pt" height="570pt"
+ viewBox="0.00 0.00 637.16 570.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(10.08 560.08)">
+<title>G</title>
+<!-- p&#45;&gt;c -->
+<g id="edge1" class="edge">
+<title>p&#45;&gt;c</title>
+<path fill="none" stroke="#607487" d="M332,-495.98C332,-481.75 332,-463.88 332,-448.21"/>
+<text text-anchor="middle" x="349.5" y="-469.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">registra</text>
+<text text-anchor="middle" x="339.18" y="-461.42" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="324.82" y="-478.37" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- p&#45;&gt;m -->
+<g id="edge2" class="edge">
+<title>p&#45;&gt;m</title>
+<path fill="none" stroke="#607487" d="M284.64,-495.98C252.34,-478.23 209.73,-454.81 177.41,-437.05"/>
+<text text-anchor="middle" x="273" y="-469.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">referencia</text>
+<text text-anchor="middle" x="194.38" y="-435.98" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="267.68" y="-492.65" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- p&#45;&gt;o -->
+<g id="edge3" class="edge">
+<title>p&#45;&gt;o</title>
+<path fill="none" stroke="#607487" d="M377.25,-495.98C408.11,-478.23 448.83,-454.81 479.7,-437.05"/>
+<text text-anchor="middle" x="440" y="-469.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">tramita</text>
+<text text-anchor="middle" x="469.93" y="-448.76" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="387.02" y="-479.87" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- c&#45;&gt;v -->
+<g id="edge6" class="edge">
+<title>c&#45;&gt;v</title>
+<path fill="none" stroke="#607487" d="M270.13,-371.97C231.86,-349.06 190,-324 190,-324 190,-324 160.65,-234.85 145.63,-189.23"/>
+<text text-anchor="middle" x="213" y="-283.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se vincula</text>
+<text text-anchor="middle" x="157.28" y="-199.41" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="253.22" y="-368.02" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- c&#45;&gt;r -->
+<g id="edge7" class="edge">
+<title>c&#45;&gt;r</title>
+<path fill="none" stroke="#607487" d="M334.14,-371.73C335.01,-356.6 336.01,-339.15 336.87,-324.04"/>
+<text text-anchor="middle" x="349.5" y="-345.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">revisa</text>
+<text text-anchor="middle" x="343.16" y="-337.63" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="327.85" y="-353.74" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- c&#45;&gt;l -->
+<g id="edge9" class="edge">
+<title>c&#45;&gt;l</title>
+<path fill="none" stroke="#607487" d="M390.69,-371.9C414.65,-356.76 442.29,-339.28 466.25,-324.13"/>
+<text text-anchor="middle" x="465.5" y="-345.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se suministra</text>
+<text text-anchor="middle" x="457.07" y="-336.24" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="399.88" y="-355.39" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- m&#45;&gt;mv -->
+<g id="edge4" class="edge">
+<title>m&#45;&gt;mv</title>
+<path fill="none" stroke="#607487" d="M116.06,-382.83C106.95,-365.74 94.93,-343.18 84.84,-324.24"/>
+<text text-anchor="middle" x="119" y="-345.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">versiona</text>
+<text text-anchor="middle" x="98.43" y="-332.26" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="102.47" y="-370.41" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- mv&#45;&gt;v -->
+<g id="edge5" class="edge">
+<title>mv&#45;&gt;v</title>
+<path fill="none" stroke="#607487" d="M86.99,-247.73C98.16,-228.81 111.46,-206.28 121.53,-189.21"/>
+<text text-anchor="middle" x="120.5" y="-221.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">localiza</text>
+<text text-anchor="middle" x="119.89" y="-203.93" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="88.64" y="-228.61" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- r&#45;&gt;f -->
+<g id="edge11" class="edge">
+<title>r&#45;&gt;f</title>
+<path fill="none" stroke="#607487" d="M388.79,-247.73C409.01,-232.6 432.32,-215.15 452.51,-200.04"/>
+<text text-anchor="middle" x="454" y="-221.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">fundamenta</text>
+<text text-anchor="middle" x="444.48" y="-212.82" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="396.82" y="-230.55" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- r&#45;&gt;s -->
+<g id="edge13" class="edge">
+<title>r&#45;&gt;s</title>
+<path fill="none" stroke="#607487" d="M341.78,-247.66C345.33,-200.1 351,-124 351,-124 351,-124 353.65,-98.94 356.08,-76.03"/>
+<text text-anchor="middle" x="376.5" y="-159.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se propone</text>
+<text text-anchor="middle" x="361.6" y="-89.91" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="335.76" y="-229.56" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- o&#45;&gt;l -->
+<g id="edge8" class="edge">
+<title>o&#45;&gt;l</title>
+<path fill="none" stroke="#607487" d="M525,-382.83C525,-365.74 525,-343.18 525,-324.24"/>
+<text text-anchor="middle" x="541.5" y="-345.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">incluye</text>
+<text text-anchor="middle" x="532.18" y="-337.45" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="517.82" y="-365.22" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- l&#45;&gt;f -->
+<g id="edge10" class="edge">
+<title>l&#45;&gt;f</title>
+<path fill="none" stroke="#607487" d="M517.97,-247.73C515.12,-232.6 511.83,-215.15 508.98,-200.04"/>
+<text text-anchor="middle" x="527.5" y="-221.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">libera</text>
+<text text-anchor="middle" x="518.9" y="-211.65" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="508.06" y="-231.72" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- f&#45;&gt;s -->
+<g id="edge12" class="edge">
+<title>f&#45;&gt;s</title>
+<path fill="none" stroke="#607487" d="M458.62,-123.73C441.01,-108.6 420.7,-91.15 403.11,-76.04"/>
+<text text-anchor="middle" x="464.5" y="-97.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se cuestiona</text>
+<text text-anchor="middle" x="419.48" y="-78.43" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="442.26" y="-116.94" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- p -->
+<g id="node1" class="node">
+<title>p</title>
+<polygon fill="#465470" stroke="transparent" points="267,-519 267,-549 397,-549 397,-519 267,-519"/>
+<text text-anchor="start" x="276" y="-532.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Proyecto logístico</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="267,-497 267,-519 397,-519 397,-497 267,-497"/>
+<text text-anchor="start" x="272" y="-505.2" font-family="DejaVu Sans" font-size="11.00">nombre · referencia</text>
+<polygon fill="none" stroke="#a1b6c6" points="266,-496 266,-550 398,-550 398,-496 266,-496"/>
+</g>
+<!-- c -->
+<g id="node2" class="node">
+<title>c</title>
+<polygon fill="#1d5775" stroke="transparent" points="257,-417 257,-447 408,-447 408,-417 257,-417"/>
+<text text-anchor="start" x="293.5" y="-430.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Componente</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="257,-395 257,-417 408,-417 408,-395 257,-395"/>
+<text text-anchor="start" x="262" y="-403.2" font-family="DejaVu Sans" font-size="11.00">idLogiBIM · denominación</text>
+<polygon fill="#ffffff" stroke="transparent" points="257,-373 257,-395 408,-395 408,-373 257,-373"/>
+<text text-anchor="start" x="262" y="-381.2" font-family="DejaVu Sans" font-size="11.00">consultarFicha()</text>
+<polygon fill="none" stroke="#a1b6c6" points="255.5,-372 255.5,-448 408.5,-448 408.5,-372 255.5,-372"/>
+</g>
+<!-- m -->
+<g id="node3" class="node">
+<title>m</title>
+<polygon fill="#1d5775" stroke="transparent" points="66,-406 66,-436 194,-436 194,-406 66,-406"/>
+<text text-anchor="start" x="93.5" y="-419.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Modelo BIM</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="66,-384 66,-406 194,-406 194,-384 66,-384"/>
+<text text-anchor="start" x="71" y="-392.2" font-family="DejaVu Sans" font-size="11.00">referencia · disciplina</text>
+<polygon fill="none" stroke="#a1b6c6" points="65,-383 65,-437 195,-437 195,-383 65,-383"/>
+</g>
+<!-- mv -->
+<g id="node4" class="node">
+<title>mv</title>
+<polygon fill="#1d5775" stroke="transparent" points="1,-293 1,-323 129,-323 129,-293 1,-293"/>
+<text text-anchor="start" x="28" y="-306.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Versión BIM</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1,-271 1,-293 129,-293 129,-271 1,-271"/>
+<text text-anchor="start" x="6" y="-279.2" font-family="DejaVu Sans" font-size="11.00">revisión · URI · huella</text>
+<polygon fill="#ffffff" stroke="transparent" points="1,-249 1,-271 129,-271 129,-249 1,-249"/>
+<text text-anchor="start" x="6" y="-257.2" font-family="DejaVu Sans" font-size="11.00">registrarVínculo()</text>
+<polygon fill="none" stroke="#a1b6c6" points="0,-248 0,-324 130,-324 130,-248 0,-248"/>
+</g>
+<!-- v -->
+<g id="node5" class="node">
+<title>v</title>
+<polygon fill="#1d5775" stroke="transparent" points="50,-158 50,-188 225,-188 225,-158 50,-158"/>
+<text text-anchor="start" x="101" y="-171.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Vínculo BIM</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="50,-136 50,-158 225,-158 225,-136 50,-136"/>
+<text text-anchor="start" x="55" y="-144.2" font-family="DejaVu Sans" font-size="11.00">identificadorExterno · método</text>
+<polygon fill="none" stroke="#a1b6c6" points="48.5,-135 48.5,-189 225.5,-189 225.5,-135 48.5,-135"/>
+</g>
+<!-- r -->
+<g id="node6" class="node">
+<title>r</title>
+<polygon fill="#1d5775" stroke="transparent" points="249,-293 249,-323 429,-323 429,-293 249,-293"/>
+<text text-anchor="start" x="288" y="-306.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Revisión técnica</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="249,-271 249,-293 429,-293 429,-271 249,-271"/>
+<text text-anchor="start" x="254" y="-279.2" font-family="DejaVu Sans" font-size="11.00">número · medidas · masa neta</text>
+<polygon fill="#ffffff" stroke="transparent" points="249,-249 249,-271 429,-271 429,-249 249,-249"/>
+<text text-anchor="start" x="254" y="-257.2" font-family="DejaVu Sans" font-size="11.00">validar()</text>
+<polygon fill="none" stroke="#a1b6c6" points="248,-248 248,-324 430,-324 430,-248 248,-248"/>
+</g>
+<!-- o -->
+<g id="node7" class="node">
+<title>o</title>
+<polygon fill="#136756" stroke="transparent" points="434,-406 434,-436 616,-436 616,-406 434,-406"/>
+<text text-anchor="start" x="503.5" y="-419.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Pedido</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="434,-384 434,-406 616,-406 616,-384 434,-384"/>
+<text text-anchor="start" x="439" y="-392.2" font-family="DejaVu Sans" font-size="11.00">referencia · proveedor · estado</text>
+<polygon fill="none" stroke="#a1b6c6" points="433,-383 433,-437 617,-437 617,-383 433,-383"/>
+</g>
+<!-- l -->
+<g id="node8" class="node">
+<title>l</title>
+<polygon fill="#136756" stroke="transparent" points="456,-293 456,-323 595,-323 595,-293 456,-293"/>
+<text text-anchor="start" x="465" y="-306.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Línea de suministro</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="456,-271 456,-293 595,-293 595,-271 456,-271"/>
+<text text-anchor="start" x="461" y="-279.2" font-family="DejaVu Sans" font-size="11.00">lote · avance · fechas</text>
+<polygon fill="#ffffff" stroke="transparent" points="456,-249 456,-271 595,-271 595,-249 456,-249"/>
+<text text-anchor="start" x="461" y="-257.2" font-family="DejaVu Sans" font-size="11.00">iniciarFabricación()</text>
+<polygon fill="none" stroke="#a1b6c6" points="454.5,-248 454.5,-324 595.5,-324 595.5,-248 454.5,-248"/>
+</g>
+<!-- f -->
+<g id="node9" class="node">
+<title>f</title>
+<polygon fill="#136756" stroke="transparent" points="416,-169 416,-199 589,-199 589,-169 416,-169"/>
+<text text-anchor="start" x="425" y="-182.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Liberación de fabricación</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="416,-147 416,-169 589,-169 589,-147 416,-147"/>
+<text text-anchor="start" x="421" y="-155.2" font-family="DejaVu Sans" font-size="11.00">estado · envío · congelación</text>
+<polygon fill="#ffffff" stroke="transparent" points="416,-125 416,-147 589,-147 589,-125 416,-125"/>
+<text text-anchor="start" x="421" y="-133.2" font-family="DejaVu Sans" font-size="11.00">congelar() · sustituir()</text>
+<polygon fill="none" stroke="#a1b6c6" points="414.5,-124 414.5,-200 589.5,-200 589.5,-124 414.5,-124"/>
+</g>
+<!-- s -->
+<g id="node10" class="node">
+<title>s</title>
+<polygon fill="#724b85" stroke="transparent" points="274,-45 274,-75 446,-75 446,-45 274,-45"/>
+<text text-anchor="start" x="299.5" y="-58.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Solicitud de cambio</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="274,-23 274,-45 446,-45 446,-23 274,-23"/>
+<text text-anchor="start" x="279" y="-31.2" font-family="DejaVu Sans" font-size="11.00">motivo · impacto · resolución</text>
+<polygon fill="#ffffff" stroke="transparent" points="274,-1 274,-23 446,-23 446,-1 274,-1"/>
+<text text-anchor="start" x="279" y="-9.2" font-family="DejaVu Sans" font-size="11.00">resolver()</text>
+<polygon fill="none" stroke="#a1b6c6" points="273,0 273,-76 447,-76 447,0 273,0"/>
+</g>
+</g>
+</svg>
+</div><figcaption>UML 1 · Identidad, BIM y suministro <a class="download" download="01_uml_identidad.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwpwIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiM0NjU0NzAiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlByb3llY3RvIGxvZ8Otc3RpY288L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+bm9tYnJlIMK3IHJlZmVyZW5jaWE8L1REPjwvVFI+PC9UQUJMRT4+XTsKYyBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5Db21wb25lbnRlPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmlkTG9naUJJTSDCtyBkZW5vbWluYWNpw7NuPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5jb25zdWx0YXJGaWNoYSgpPC9URD48L1RSPjwvVEFCTEU+Pl07Cm0gW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzFkNTc3NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+TW9kZWxvIEJJTTwvQj48L0ZPTlQ+PC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5yZWZlcmVuY2lhIMK3IGRpc2NpcGxpbmE8L1REPjwvVFI+PC9UQUJMRT4+XTsKbXYgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzFkNTc3NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+VmVyc2nDs24gQklNPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPnJldmlzacOzbiDCtyBVUkkgwrcgaHVlbGxhPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5yZWdpc3RyYXJWw61uY3VsbygpPC9URD48L1RSPjwvVEFCTEU+Pl07CnYgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzFkNTc3NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+VsOtbmN1bG8gQklNPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmlkZW50aWZpY2Fkb3JFeHRlcm5vIMK3IG3DqXRvZG88L1REPjwvVFI+PC9UQUJMRT4+XTsKciBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SZXZpc2nDs24gdMOpY25pY2E8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+bsO6bWVybyDCtyBtZWRpZGFzIMK3IG1hc2EgbmV0YTwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+dmFsaWRhcigpPC9URD48L1RSPjwvVEFCTEU+Pl07Cm8gW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+UGVkaWRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPnJlZmVyZW5jaWEgwrcgcHJvdmVlZG9yIMK3IGVzdGFkbzwvVEQ+PC9UUj48L1RBQkxFPj5dOwpsIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxMzY3NTYiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkzDrW5lYSBkZSBzdW1pbmlzdHJvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmxvdGUgwrcgYXZhbmNlIMK3IGZlY2hhczwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+aW5pY2lhckZhYnJpY2FjacOzbigpPC9URD48L1RSPjwvVEFCTEU+Pl07CmYgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+TGliZXJhY2nDs24gZGUgZmFicmljYWNpw7NuPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmVzdGFkbyDCtyBlbnbDrW8gwrcgY29uZ2VsYWNpw7NuPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5jb25nZWxhcigpIMK3IHN1c3RpdHVpcigpPC9URD48L1RSPjwvVEFCTEU+Pl07CnMgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzcyNGI4NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+U29saWNpdHVkIGRlIGNhbWJpbzwvQj48L0ZPTlQ+PC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5tb3Rpdm8gwrcgaW1wYWN0byDCtyByZXNvbHVjacOzbjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+cmVzb2x2ZXIoKTwvVEQ+PC9UUj48L1RBQkxFPj5dOwpwIC0+IGMgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0icmVnaXN0cmEiXTsKcCAtPiBtIFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9InJlZmVyZW5jaWEiXTsKcCAtPiBvIFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9InRyYW1pdGEiXTsKbSAtPiBtdiBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJ2ZXJzaW9uYSJdOwptdiAtPiB2IFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9ImxvY2FsaXphIl07CmMgLT4gdiBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJzZSB2aW5jdWxhIl07CmMgLT4gciBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJyZXZpc2EiXTsKbyAtPiBsIFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9ImluY2x1eWUiXTsKYyAtPiBsIFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9InNlIHN1bWluaXN0cmEiXTsKbCAtPiBmIFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9ImxpYmVyYSJdOwpyIC0+IGYgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0iZnVuZGFtZW50YSJdOwpmIC0+IHMgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0ic2UgY3Vlc3Rpb25hIl07CnIgLT4gcyBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJzZSBwcm9wb25lIl07Cn0K">Descargar fuente DOT</a></figcaption></figure>
+<p>Una unidad conserva su ID al cambiar de revisión. Un modelo puede publicarse varias veces y una unidad puede vincularse a varios objetos BIM. Cada liberación referencia la revisión técnica que recibió el fabricante.</p>
+<figure><div class="diagram"><svg role="img" aria-label="UML 2 · Embalaje, transporte y recepción" width="544pt" height="446pt"
+ viewBox="0.00 0.00 543.66 446.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(10.08 436.08)">
+<title>G</title>
+<!-- c&#45;&gt;cb -->
+<g id="edge1" class="edge">
+<title>c&#45;&gt;cb</title>
+<path fill="none" stroke="#607487" d="M60.16,-236.83C68.93,-216.24 81.09,-187.7 89.86,-167.13"/>
+<text text-anchor="middle" x="100" y="-199.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se embala</text>
+<text text-anchor="middle" x="90.43" y="-181.92" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="59.59" y="-217.64" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- e&#45;&gt;b -->
+<g id="edge3" class="edge">
+<title>e&#45;&gt;b</title>
+<path fill="none" stroke="#607487" d="M223,-349.73C223,-334.6 223,-317.15 223,-302.04"/>
+<text text-anchor="middle" x="243" y="-323.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se aplica</text>
+<text text-anchor="middle" x="230.18" y="-315.25" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="215.82" y="-332.13" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..1</text>
+</g>
+<!-- b&#45;&gt;cb -->
+<g id="edge2" class="edge">
+<title>b&#45;&gt;cb</title>
+<path fill="none" stroke="#607487" d="M185.73,-225.73C166.81,-206.81 144.28,-184.28 127.21,-167.21"/>
+<text text-anchor="middle" x="186" y="-199.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">contiene</text>
+<text text-anchor="middle" x="143.19" y="-170.83" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="169.76" y="-217.72" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- b&#45;&gt;nB -->
+<g id="edge5" class="edge">
+<title>b&#45;&gt;nB</title>
+<path fill="none" stroke="#607487" d="M266.99,-225.73C284.85,-210.6 305.44,-193.15 323.28,-178.04"/>
+<text text-anchor="middle" x="329.5" y="-199.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se transporta</text>
+<text text-anchor="middle" x="316.17" y="-191.28" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="274.1" y="-208.09" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- n&#45;&gt;nB -->
+<g id="edge4" class="edge">
+<title>n&#45;&gt;nB</title>
+<path fill="none" stroke="#607487" d="M414.92,-225.73C406.36,-210.6 396.5,-193.15 387.95,-178.04"/>
+<text text-anchor="middle" x="419.5" y="-199.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">agrupa</text>
+<text text-anchor="middle" x="401.79" y="-185.71" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="401.08" y="-213.66" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- nB&#45;&gt;x -->
+<g id="edge6" class="edge">
+<title>nB&#45;&gt;x</title>
+<path fill="none" stroke="#607487" d="M367,-101.73C367,-86.11 367,-68.32 367,-54.13"/>
+<text text-anchor="middle" x="399.5" y="-75.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">se comprueba</text>
+<text text-anchor="middle" x="374.18" y="-67.34" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">0..*</text>
+<text text-anchor="middle" x="359.82" y="-84.12" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">1</text>
+</g>
+<!-- c -->
+<g id="node1" class="node">
+<title>c</title>
+<polygon fill="#1d5775" stroke="transparent" points="1,-260 1,-290 97,-290 97,-260 1,-260"/>
+<text text-anchor="start" x="10" y="-273.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Componente</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1,-238 1,-260 97,-260 97,-238 1,-238"/>
+<text text-anchor="start" x="6" y="-246.2" font-family="DejaVu Sans" font-size="11.00">idLogiBIM</text>
+<polygon fill="none" stroke="#a1b6c6" points="0,-237 0,-291 98,-291 98,-237 0,-237"/>
+</g>
+<!-- e -->
+<g id="node2" class="node">
+<title>e</title>
+<polygon fill="#136756" stroke="transparent" points="106,-395 106,-425 341,-425 341,-395 106,-395"/>
+<text text-anchor="start" x="167.5" y="-408.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Ficha de embalaje</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="106,-373 106,-395 341,-395 341,-373 106,-373"/>
+<text text-anchor="start" x="111" y="-381.2" font-family="DejaVu Sans" font-size="11.00">materiales · protecciones · instrucciones</text>
+<polygon fill="#ffffff" stroke="transparent" points="106,-351 106,-373 341,-373 341,-351 106,-351"/>
+<text text-anchor="start" x="111" y="-359.2" font-family="DejaVu Sans" font-size="11.00">validarPara(revisión)</text>
+<polygon fill="none" stroke="#a1b6c6" points="104.5,-350 104.5,-426 341.5,-426 341.5,-350 104.5,-350"/>
+</g>
+<!-- b -->
+<g id="node3" class="node">
+<title>b</title>
+<polygon fill="#136756" stroke="transparent" points="123,-271 123,-301 323,-301 323,-271 123,-271"/>
+<text text-anchor="start" x="206.5" y="-284.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Bulto</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="123,-249 123,-271 323,-271 323,-249 123,-249"/>
+<text text-anchor="start" x="128" y="-257.2" font-family="DejaVu Sans" font-size="11.00">código · dimensiones exteriores</text>
+<polygon fill="#ffffff" stroke="transparent" points="123,-227 123,-249 323,-249 323,-227 123,-227"/>
+<text text-anchor="start" x="128" y="-235.2" font-family="DejaVu Sans" font-size="11.00">masa bruta · apilabilidad · cerrar()</text>
+<polygon fill="none" stroke="#a1b6c6" points="122,-226 122,-302 324,-302 324,-226 122,-226"/>
+</g>
+<!-- cb -->
+<g id="node4" class="node">
+<title>cb</title>
+<polygon fill="#136756" stroke="transparent" points="19,-136 19,-166 183,-166 183,-136 19,-136"/>
+<text text-anchor="start" x="42.5" y="-149.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Contenido de bulto</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="19,-114 19,-136 183,-136 183,-114 19,-114"/>
+<text text-anchor="start" x="24" y="-122.2" font-family="DejaVu Sans" font-size="11.00">alta · baja · revisión técnica</text>
+<polygon fill="none" stroke="#a1b6c6" points="18,-113 18,-167 184,-167 184,-113 18,-113"/>
+</g>
+<!-- n -->
+<g id="node5" class="node">
+<title>n</title>
+<polygon fill="#136756" stroke="transparent" points="350,-271 350,-301 523,-301 523,-271 350,-271"/>
+<text text-anchor="start" x="419.5" y="-284.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Envío</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="350,-249 350,-271 523,-271 523,-249 350,-249"/>
+<text text-anchor="start" x="355" y="-257.2" font-family="DejaVu Sans" font-size="11.00">origen · destino · fechas</text>
+<polygon fill="#ffffff" stroke="transparent" points="350,-227 350,-249 523,-249 523,-227 350,-227"/>
+<text text-anchor="start" x="355" y="-235.2" font-family="DejaVu Sans" font-size="11.00">comprobarSalida() · expedir()</text>
+<polygon fill="none" stroke="#a1b6c6" points="348.5,-226 348.5,-302 523.5,-302 523.5,-226 348.5,-226"/>
+</g>
+<!-- nB -->
+<g id="node6" class="node">
+<title>nB</title>
+<polygon fill="#136756" stroke="transparent" points="278,-147 278,-177 457,-177 457,-147 278,-147"/>
+<text text-anchor="start" x="323" y="-160.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Bulto en envío</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="278,-125 278,-147 457,-147 457,-125 278,-125"/>
+<text text-anchor="start" x="283" y="-133.2" font-family="DejaVu Sans" font-size="11.00">ordenCarga · masaBrutaSalida</text>
+<polygon fill="#ffffff" stroke="transparent" points="278,-103 278,-125 457,-125 457,-103 278,-103"/>
+<text text-anchor="start" x="283" y="-111.2" font-family="DejaVu Sans" font-size="11.00">confirmarRecepción()</text>
+<polygon fill="none" stroke="#a1b6c6" points="276.5,-102 276.5,-178 457.5,-178 457.5,-102 276.5,-102"/>
+</g>
+<!-- x -->
+<g id="node7" class="node">
+<title>x</title>
+<polygon fill="#136756" stroke="transparent" points="284,-23 284,-53 451,-53 451,-23 284,-23"/>
+<text text-anchor="start" x="308.5" y="-36.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Recepción de bulto</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="284,-1 284,-23 451,-23 451,-1 284,-1"/>
+<text text-anchor="start" x="289" y="-9.2" font-family="DejaVu Sans" font-size="11.00">resultado · fecha · evidencia</text>
+<polygon fill="none" stroke="#a1b6c6" points="282.5,0 282.5,-54 451.5,-54 451.5,0 282.5,0"/>
+</g>
+</g>
+</svg>
+</div><figcaption>UML 2 · Embalaje, transporte y recepción <a class="download" download="02_uml_logistica.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwpjIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxZDU3NzUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkNvbXBvbmVudGU8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+aWRMb2dpQklNPC9URD48L1RSPjwvVEFCTEU+Pl07CmUgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+RmljaGEgZGUgZW1iYWxhamU8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+bWF0ZXJpYWxlcyDCtyBwcm90ZWNjaW9uZXMgwrcgaW5zdHJ1Y2Npb25lczwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+dmFsaWRhclBhcmEocmV2aXNpw7NuKTwvVEQ+PC9UUj48L1RBQkxFPj5dOwpiIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxMzY3NTYiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkJ1bHRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmPDs2RpZ28gwrcgZGltZW5zaW9uZXMgZXh0ZXJpb3JlczwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+bWFzYSBicnV0YSDCtyBhcGlsYWJpbGlkYWQgwrcgY2VycmFyKCk8L1REPjwvVFI+PC9UQUJMRT4+XTsKY2IgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+Q29udGVuaWRvIGRlIGJ1bHRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmFsdGEgwrcgYmFqYSDCtyByZXZpc2nDs24gdMOpY25pY2E8L1REPjwvVFI+PC9UQUJMRT4+XTsKbiBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5FbnbDrW88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+b3JpZ2VuIMK3IGRlc3Rpbm8gwrcgZmVjaGFzPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5jb21wcm9iYXJTYWxpZGEoKSDCtyBleHBlZGlyKCk8L1REPjwvVFI+PC9UQUJMRT4+XTsKbkIgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+QnVsdG8gZW4gZW52w61vPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPm9yZGVuQ2FyZ2EgwrcgbWFzYUJydXRhU2FsaWRhPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5jb25maXJtYXJSZWNlcGNpw7NuKCk8L1REPjwvVFI+PC9UQUJMRT4+XTsKeCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SZWNlcGNpw7NuIGRlIGJ1bHRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPnJlc3VsdGFkbyDCtyBmZWNoYSDCtyBldmlkZW5jaWE8L1REPjwvVFI+PC9UQUJMRT4+XTsKYyAtPiBjYiBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJzZSBlbWJhbGEiXTsKYiAtPiBjYiBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJjb250aWVuZSJdOwplIC0+IGIgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjAuLjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0ic2UgYXBsaWNhIl07Cm4gLT4gbkIgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0iYWdydXBhIl07CmIgLT4gbkIgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0ic2UgdHJhbnNwb3J0YSJdOwpuQiAtPiB4IFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9InNlIGNvbXBydWViYSJdOwp9Cg==">Descargar fuente DOT</a></figcaption></figure>
+<p>La ficha prescribe el embalaje. El bulto registra el resultado real, puede agrupar varios componentes y conserva su historial de expediciones. En UML, el contenido se asocia a la unidad. En el E‑R, apunta a su revisión exacta y llega a la unidad por esa relación.</p>
+</section>
+
+<section id="er">
+<h2>3. Diagramas entidad–relación</h2>
+<p class="legend"><strong>PK</strong> clave primaria · <strong>FK</strong> clave foránea · <strong>UQ</strong> unicidad · <strong>opc.</strong> campo nullable. Pata de cuervo para múltiples registros, círculo para opcionalidad y barra para obligatoriedad. Las tablas repetidas conectan los tres diagramas.</p>
+<figure><div class="diagram"><svg role="img" aria-label="E-R 1 · Identidad, versiones y fabricación" width="732pt" height="680pt"
+ viewBox="0.00 0.00 732.16 680.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(10.08 670.08)">
+<title>G</title>
+<!-- p&#45;&gt;c -->
+<g id="edge1" class="edge">
+<title>p&#45;&gt;c</title>
+<path fill="none" stroke="#607487" d="M350,-576.02C350,-571.05 350,-565.93 350,-560.8"/>
+<polygon fill="#607487" stroke="#607487" points="353.75,-582.98 346.25,-582.98 346.25,-581.48 353.75,-581.48 353.75,-582.98"/>
+<polyline fill="none" stroke="#607487" points="350,-583.73 350,-579.98 "/>
+<polygon fill="#607487" stroke="#607487" points="353.75,-579.23 346.25,-579.23 346.25,-577.73 353.75,-577.73 353.75,-579.23"/>
+<polyline fill="none" stroke="#607487" points="350,-579.98 350,-576.23 "/>
+<polygon fill="#607487" stroke="#607487" points="350,-554.79 353.38,-547.29 350,-551.04 350,-547.29 350,-547.29 350,-547.29 350,-551.04 346.62,-547.29 350,-554.79 350,-554.79"/>
+<ellipse fill="none" stroke="#607487" cx="350" cy="-557.79" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;m -->
+<g id="edge2" class="edge">
+<title>p&#45;&gt;m</title>
+<path fill="none" stroke="#607487" d="M416.11,-584.17C439.46,-571.16 465.95,-556.41 490.25,-542.87"/>
+<polygon fill="#607487" stroke="#607487" points="411.74,-590.9 408.09,-584.34 409.41,-583.61 413.06,-590.17 411.74,-590.9"/>
+<polyline fill="none" stroke="#607487" points="409.26,-587.99 412.54,-586.16 "/>
+<polygon fill="#607487" stroke="#607487" points="415.02,-589.07 411.37,-582.52 412.68,-581.79 416.33,-588.34 415.02,-589.07"/>
+<polyline fill="none" stroke="#607487" points="412.54,-586.16 415.82,-584.34 "/>
+<polygon fill="#607487" stroke="#607487" points="495.8,-539.78 503.99,-539.08 499.07,-537.96 502.35,-536.13 502.35,-536.13 502.35,-536.13 499.07,-537.96 500.71,-533.18 495.8,-539.78 495.8,-539.78"/>
+<ellipse fill="none" stroke="#607487" cx="493.18" cy="-541.24" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;o -->
+<g id="edge3" class="edge">
+<title>p&#45;&gt;o</title>
+<path fill="none" stroke="#607487" d="M283.97,-584.55C266.44,-574.87 247.12,-564.2 228.24,-553.78"/>
+<polygon fill="#607487" stroke="#607487" points="291.93,-584.66 288.31,-591.23 286.99,-590.5 290.62,-583.94 291.93,-584.66"/>
+<polyline fill="none" stroke="#607487" points="290.78,-588.31 287.49,-586.49 "/>
+<polygon fill="#607487" stroke="#607487" points="288.65,-582.85 285.02,-589.41 283.71,-588.69 287.34,-582.12 288.65,-582.85"/>
+<polyline fill="none" stroke="#607487" points="287.49,-586.49 284.21,-584.68 "/>
+<polygon fill="#607487" stroke="#607487" points="222.8,-550.78 217.87,-544.2 219.52,-548.97 216.24,-547.16 216.24,-547.16 216.24,-547.16 219.52,-548.97 214.61,-550.11 222.8,-550.78 222.8,-550.78"/>
+<ellipse fill="none" stroke="#607487" cx="225.43" cy="-552.23" rx="3" ry="3"/>
+</g>
+<!-- c&#45;&gt;v -->
+<g id="edge6" class="edge">
+<title>c&#45;&gt;v</title>
+<path fill="none" stroke="#607487" d="M416.24,-443.89C437.66,-426.71 456,-412 456,-412 456,-412 506,-292 506,-292 506,-292 511.26,-281.35 518.06,-267.59"/>
+<polygon fill="#607487" stroke="#607487" points="413.05,-451.24 408.36,-445.39 409.53,-444.45 414.22,-450.31 413.05,-451.24"/>
+<polyline fill="none" stroke="#607487" points="410.12,-448.79 413.05,-446.44 "/>
+<polygon fill="#607487" stroke="#607487" points="415.98,-448.9 411.29,-443.05 412.46,-442.11 417.15,-447.96 415.98,-448.9"/>
+<polyline fill="none" stroke="#607487" points="413.05,-446.44 415.97,-444.1 "/>
+<polygon fill="#607487" stroke="#607487" points="520.73,-262.18 527.08,-256.95 522.39,-258.82 524.06,-255.46 524.06,-255.46 524.06,-255.46 522.39,-258.82 521.03,-253.96 520.73,-262.18 520.73,-262.18"/>
+<ellipse fill="none" stroke="#607487" cx="519.4" cy="-264.87" rx="3" ry="3"/>
+</g>
+<!-- c&#45;&gt;r -->
+<g id="edge7" class="edge">
+<title>c&#45;&gt;r</title>
+<path fill="none" stroke="#607487" d="M350,-441.14C350,-436.11 350,-430.96 350,-425.81"/>
+<polygon fill="#607487" stroke="#607487" points="353.75,-447.9 346.25,-447.9 346.25,-446.4 353.75,-446.4 353.75,-447.9"/>
+<polyline fill="none" stroke="#607487" points="350,-448.65 350,-444.9 "/>
+<polygon fill="#607487" stroke="#607487" points="353.75,-444.15 346.25,-444.15 346.25,-442.65 353.75,-442.65 353.75,-444.15"/>
+<polyline fill="none" stroke="#607487" points="350,-444.9 350,-441.15 "/>
+<polygon fill="#607487" stroke="#607487" points="350,-419.73 353.38,-412.23 350,-415.98 350,-412.23 350,-412.23 350,-412.23 350,-415.98 346.62,-412.23 350,-419.73 350,-419.73"/>
+<ellipse fill="none" stroke="#607487" cx="350" cy="-422.73" rx="3" ry="3"/>
+</g>
+<!-- c&#45;&gt;l -->
+<g id="edge9" class="edge">
+<title>c&#45;&gt;l</title>
+<path fill="none" stroke="#607487" d="M264.97,-444.67C251.54,-436.41 237.51,-427.78 223.65,-419.25"/>
+<polygon fill="#607487" stroke="#607487" points="273.08,-445.26 269.15,-451.65 267.87,-450.86 271.81,-444.48 273.08,-445.26"/>
+<polyline fill="none" stroke="#607487" points="271.76,-448.85 268.56,-446.88 "/>
+<polygon fill="#607487" stroke="#607487" points="269.89,-443.3 265.96,-449.69 264.68,-448.9 268.61,-442.51 269.89,-443.3"/>
+<polyline fill="none" stroke="#607487" points="268.56,-446.88 265.37,-444.92 "/>
+<polygon fill="#607487" stroke="#607487" points="218.46,-416.05 213.84,-409.25 215.27,-414.09 212.07,-412.12 212.07,-412.12 212.07,-412.12 215.27,-414.09 210.3,-415 218.46,-416.05 218.46,-416.05"/>
+<ellipse fill="none" stroke="#607487" cx="221.02" cy="-417.63" rx="3" ry="3"/>
+</g>
+<!-- m&#45;&gt;mv -->
+<g id="edge4" class="edge">
+<title>m&#45;&gt;mv</title>
+<path fill="none" stroke="#607487" d="M583.14,-452.74C588.12,-437.16 593.74,-419.54 598.87,-403.49"/>
+<polygon fill="#607487" stroke="#607487" points="584.65,-460.34 577.5,-458.06 577.96,-456.63 585.1,-458.91 584.65,-460.34"/>
+<polyline fill="none" stroke="#607487" points="580.85,-459.92 581.99,-456.34 "/>
+<polygon fill="#607487" stroke="#607487" points="585.79,-456.77 578.64,-454.49 579.1,-453.06 586.24,-455.34 585.79,-456.77"/>
+<polyline fill="none" stroke="#607487" points="581.99,-456.34 583.13,-452.77 "/>
+<polygon fill="#607487" stroke="#607487" points="600.75,-397.6 606.25,-391.49 601.89,-394.03 603.03,-390.46 603.03,-390.46 603.03,-390.46 601.89,-394.03 599.82,-389.43 600.75,-397.6 600.75,-397.6"/>
+<ellipse fill="none" stroke="#607487" cx="599.84" cy="-400.46" rx="3" ry="3"/>
+</g>
+<!-- mv&#45;&gt;v -->
+<g id="edge5" class="edge">
+<title>mv&#45;&gt;v</title>
+<path fill="none" stroke="#607487" d="M594.54,-307.03C588.75,-294.59 582.35,-280.82 576.18,-267.58"/>
+<polygon fill="#607487" stroke="#607487" points="600.83,-311.65 594.03,-314.82 593.4,-313.46 600.2,-310.29 600.83,-311.65"/>
+<polyline fill="none" stroke="#607487" points="597.75,-313.92 596.16,-310.52 "/>
+<polygon fill="#607487" stroke="#607487" points="599.25,-308.25 592.45,-311.42 591.81,-310.06 598.61,-306.89 599.25,-308.25"/>
+<polyline fill="none" stroke="#607487" points="596.16,-310.52 594.58,-307.12 "/>
+<polygon fill="#607487" stroke="#607487" points="573.55,-261.9 573.44,-253.68 571.96,-258.5 570.38,-255.1 570.38,-255.1 570.38,-255.1 571.96,-258.5 567.32,-256.53 573.55,-261.9 573.55,-261.9"/>
+<ellipse fill="none" stroke="#607487" cx="574.81" cy="-264.62" rx="3" ry="3"/>
+</g>
+<!-- r&#45;&gt;f -->
+<g id="edge11" class="edge">
+<title>r&#45;&gt;f</title>
+<path fill="none" stroke="#607487" d="M277.37,-286.44C269.03,-279.03 260.56,-271.5 252.34,-264.19"/>
+<polygon fill="#607487" stroke="#607487" points="285.1,-288.3 280.12,-293.9 279,-292.91 283.98,-287.3 285.1,-288.3"/>
+<polyline fill="none" stroke="#607487" points="283.17,-291.6 280.37,-289.11 "/>
+<polygon fill="#607487" stroke="#607487" points="282.3,-285.81 277.32,-291.41 276.2,-290.41 281.18,-284.81 282.3,-285.81"/>
+<polyline fill="none" stroke="#607487" points="280.37,-289.11 277.57,-286.62 "/>
+<polygon fill="#607487" stroke="#607487" points="247.68,-260.05 244.32,-252.55 244.88,-257.56 242.08,-255.07 242.08,-255.07 242.08,-255.07 244.88,-257.56 239.84,-257.59 247.68,-260.05 247.68,-260.05"/>
+<ellipse fill="none" stroke="#607487" cx="249.93" cy="-262.05" rx="3" ry="3"/>
+</g>
+<!-- r&#45;&gt;s -->
+<g id="edge13" class="edge">
+<title>r&#45;&gt;s</title>
+<path fill="none" stroke="#607487" d="M341.4,-284.28C334.17,-228.15 325,-157 325,-157 325,-157 318.79,-146.36 310.51,-132.17"/>
+<polygon fill="#607487" stroke="#607487" points="345.99,-290.52 338.55,-291.47 338.36,-289.99 345.79,-289.03 345.99,-290.52"/>
+<polyline fill="none" stroke="#607487" points="342.36,-291.74 341.88,-288.02 "/>
+<polygon fill="#607487" stroke="#607487" points="345.51,-286.8 338.07,-287.76 337.88,-286.27 345.32,-285.31 345.51,-286.8"/>
+<polyline fill="none" stroke="#607487" points="341.88,-288.02 341.4,-284.3 "/>
+<polygon fill="#607487" stroke="#607487" points="307.29,-126.64 306.42,-118.46 305.4,-123.4 303.51,-120.16 303.51,-120.16 303.51,-120.16 305.4,-123.4 300.59,-121.86 307.29,-126.64 307.29,-126.64"/>
+<ellipse fill="none" stroke="#607487" cx="308.8" cy="-129.23" rx="3" ry="3"/>
+</g>
+<!-- o&#45;&gt;l -->
+<g id="edge8" class="edge">
+<title>o&#45;&gt;l</title>
+<path fill="none" stroke="#607487" d="M123.96,-441.14C123.5,-436.11 123.04,-430.96 122.57,-425.81"/>
+<polygon fill="#607487" stroke="#607487" points="128.3,-447.57 120.83,-448.24 120.7,-446.75 128.17,-446.07 128.3,-447.57"/>
+<polyline fill="none" stroke="#607487" points="124.64,-448.65 124.3,-444.91 "/>
+<polygon fill="#607487" stroke="#607487" points="127.97,-443.83 120.5,-444.5 120.36,-443.01 127.83,-442.34 127.97,-443.83"/>
+<polyline fill="none" stroke="#607487" points="124.3,-444.91 123.96,-441.18 "/>
+<polygon fill="#607487" stroke="#607487" points="122.02,-419.7 124.71,-411.92 121.68,-415.96 121.35,-412.23 121.35,-412.23 121.35,-412.23 121.68,-415.96 117.99,-412.53 122.02,-419.7 122.02,-419.7"/>
+<ellipse fill="none" stroke="#607487" cx="122.29" cy="-422.68" rx="3" ry="3"/>
+</g>
+<!-- l&#45;&gt;f -->
+<g id="edge10" class="edge">
+<title>l&#45;&gt;f</title>
+<path fill="none" stroke="#607487" d="M149.12,-284.76C151.99,-279.02 154.89,-273.23 157.73,-267.54"/>
+<polygon fill="#607487" stroke="#607487" points="149.39,-292.6 142.68,-289.25 143.35,-287.91 150.06,-291.26 149.39,-292.6"/>
+<polyline fill="none" stroke="#607487" points="145.7,-291.6 147.38,-288.24 "/>
+<polygon fill="#607487" stroke="#607487" points="151.07,-289.25 144.36,-285.9 145.03,-284.55 151.74,-287.91 151.07,-289.25"/>
+<polyline fill="none" stroke="#607487" points="147.38,-288.24 149.05,-284.89 "/>
+<polygon fill="#607487" stroke="#607487" points="160.5,-262 166.87,-256.8 162.18,-258.65 163.85,-255.29 163.85,-255.29 163.85,-255.29 162.18,-258.65 160.83,-253.78 160.5,-262 160.5,-262"/>
+<ellipse fill="none" stroke="#607487" cx="159.16" cy="-264.69" rx="3" ry="3"/>
+</g>
+<!-- f&#45;&gt;s -->
+<g id="edge12" class="edge">
+<title>f&#45;&gt;s</title>
+<path fill="none" stroke="#607487" d="M218.94,-149.99C222.2,-144.21 225.54,-138.27 228.87,-132.34"/>
+<polygon fill="#607487" stroke="#607487" points="218.83,-157.83 212.3,-154.16 213.03,-152.85 219.57,-156.53 218.83,-157.83"/>
+<polyline fill="none" stroke="#607487" points="215.2,-156.65 217.04,-153.38 "/>
+<polygon fill="#607487" stroke="#607487" points="220.67,-154.57 214.13,-150.89 214.87,-149.58 221.41,-153.26 220.67,-154.57"/>
+<polyline fill="none" stroke="#607487" points="217.04,-153.38 218.87,-150.11 "/>
+<polygon fill="#607487" stroke="#607487" points="232.01,-126.76 238.63,-121.88 233.85,-123.5 235.68,-120.23 235.68,-120.23 235.68,-120.23 233.85,-123.5 232.74,-118.57 232.01,-126.76 232.01,-126.76"/>
+<ellipse fill="none" stroke="#607487" cx="230.54" cy="-129.38" rx="3" ry="3"/>
+</g>
+<!-- p -->
+<g id="node1" class="node">
+<title>p</title>
+<polygon fill="#465470" stroke="transparent" points="292,-629 292,-659 408,-659 408,-629 292,-629"/>
+<text text-anchor="start" x="316.5" y="-642.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">PROYECTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="292,-607 292,-629 408,-629 408,-607 292,-607"/>
+<text text-anchor="start" x="297" y="-615.2" font-family="DejaVu Sans" font-size="11.00">PK id</text>
+<polygon fill="#ffffff" stroke="transparent" points="292,-585 292,-607 408,-607 408,-585 292,-585"/>
+<text text-anchor="start" x="297" y="-593.2" font-family="DejaVu Sans" font-size="11.00">nombre, referencia</text>
+<polygon fill="none" stroke="#a1b6c6" points="291,-584 291,-660 409,-660 409,-584 291,-584"/>
+</g>
+<!-- c -->
+<g id="node2" class="node">
+<title>c</title>
+<polygon fill="#1d5775" stroke="transparent" points="268,-516 268,-546 432,-546 432,-516 268,-516"/>
+<text text-anchor="start" x="306.5" y="-529.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">COMPONENTE</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="268,-494 268,-516 432,-516 432,-494 268,-494"/>
+<text text-anchor="start" x="273" y="-502.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="268,-472 268,-494 432,-494 432,-472 268,-472"/>
+<text text-anchor="start" x="273" y="-480.2" font-family="DejaVu Sans" font-size="11.00">UQ id_logibim, nombre</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="268,-450 268,-472 432,-472 432,-450 268,-450"/>
+<text text-anchor="start" x="273" y="-458.2" font-family="DejaVu Sans" font-size="11.00">estado_ciclo, ubicacion_real</text>
+<polygon fill="none" stroke="#a1b6c6" points="267,-449 267,-547 433,-547 433,-449 267,-449"/>
+</g>
+<!-- m -->
+<g id="node3" class="node">
+<title>m</title>
+<polygon fill="#1d5775" stroke="transparent" points="504,-505 504,-535 635,-535 635,-505 504,-505"/>
+<text text-anchor="start" x="528.5" y="-518.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">MODELO_BIM</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="504,-483 504,-505 635,-505 635,-483 504,-483"/>
+<text text-anchor="start" x="509" y="-491.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="504,-461 504,-483 635,-483 635,-461 504,-461"/>
+<text text-anchor="start" x="509" y="-469.2" font-family="DejaVu Sans" font-size="11.00">referencia, disciplina</text>
+<polygon fill="none" stroke="#a1b6c6" points="502.5,-460 502.5,-536 635.5,-536 635.5,-460 502.5,-460"/>
+</g>
+<!-- mv -->
+<g id="node4" class="node">
+<title>mv</title>
+<polygon fill="#1d5775" stroke="transparent" points="519,-359 519,-389 711,-389 711,-359 519,-359"/>
+<text text-anchor="start" x="573.5" y="-372.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">VERSION_BIM</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="519,-337 519,-359 711,-359 711,-337 519,-337"/>
+<text text-anchor="start" x="524" y="-345.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK modelo_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="519,-315 519,-337 711,-337 711,-315 519,-315"/>
+<text text-anchor="start" x="524" y="-323.2" font-family="DejaVu Sans" font-size="11.00">revision, uri, hash, registrada_en</text>
+<polygon fill="none" stroke="#a1b6c6" points="518,-314 518,-390 712,-390 712,-314 518,-314"/>
+</g>
+<!-- v -->
+<g id="node5" class="node">
+<title>v</title>
+<polygon fill="#1d5775" stroke="transparent" points="460,-224 460,-254 636,-254 636,-224 460,-224"/>
+<text text-anchor="start" x="506.5" y="-237.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">VINCULO_BIM</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="460,-202 460,-224 636,-224 636,-202 460,-202"/>
+<text text-anchor="start" x="465" y="-210.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK version_bim_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="460,-180 460,-202 636,-202 636,-180 460,-180"/>
+<text text-anchor="start" x="465" y="-188.2" font-family="DejaVu Sans" font-size="11.00">FK componente_id</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="460,-158 460,-180 636,-180 636,-158 460,-158"/>
+<text text-anchor="start" x="465" y="-166.2" font-family="DejaVu Sans" font-size="11.00">id_externo, esquema, metodo</text>
+<polygon fill="none" stroke="#a1b6c6" points="459,-157 459,-255 637,-255 637,-157 459,-157"/>
+</g>
+<!-- r -->
+<g id="node6" class="node">
+<title>r</title>
+<polygon fill="#1d5775" stroke="transparent" points="257,-381 257,-411 443,-411 443,-381 257,-381"/>
+<text text-anchor="start" x="292" y="-394.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">REVISION_TECNICA</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="257,-359 257,-381 443,-381 443,-359 257,-359"/>
+<text text-anchor="start" x="262" y="-367.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK componente_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="257,-337 257,-359 443,-359 443,-337 257,-337"/>
+<text text-anchor="start" x="262" y="-345.2" font-family="DejaVu Sans" font-size="11.00">numero, origen, estado</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="257,-315 257,-337 443,-337 443,-315 257,-315"/>
+<text text-anchor="start" x="262" y="-323.2" font-family="DejaVu Sans" font-size="11.00">largo_mm, ancho_mm, alto_mm</text>
+<polygon fill="#ffffff" stroke="transparent" points="257,-293 257,-315 443,-315 443,-293 257,-293"/>
+<text text-anchor="start" x="262" y="-301.2" font-family="DejaVu Sans" font-size="11.00">masa_neta_kg, materiales</text>
+<polygon fill="none" stroke="#a1b6c6" points="256,-292 256,-412 444,-412 444,-292 256,-292"/>
+</g>
+<!-- o -->
+<g id="node7" class="node">
+<title>o</title>
+<polygon fill="#136756" stroke="transparent" points="28,-516 28,-546 230,-546 230,-516 28,-516"/>
+<text text-anchor="start" x="105.5" y="-529.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">PEDIDO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="28,-494 28,-516 230,-516 230,-494 28,-494"/>
+<text text-anchor="start" x="33" y="-502.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="28,-472 28,-494 230,-494 230,-472 28,-472"/>
+<text text-anchor="start" x="33" y="-480.2" font-family="DejaVu Sans" font-size="11.00">FK proveedor_id → ORGANIZACION</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="28,-450 28,-472 230,-472 230,-450 28,-450"/>
+<text text-anchor="start" x="33" y="-458.2" font-family="DejaVu Sans" font-size="11.00">referencia, estado, fecha_pedido</text>
+<polygon fill="none" stroke="#a1b6c6" points="27,-449 27,-547 231,-547 231,-449 27,-449"/>
+</g>
+<!-- l -->
+<g id="node8" class="node">
+<title>l</title>
+<polygon fill="#136756" stroke="transparent" points="1,-381 1,-411 231,-411 231,-381 1,-381"/>
+<text text-anchor="start" x="56.5" y="-394.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">LINEA_SUMINISTRO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1,-359 1,-381 231,-381 231,-359 1,-359"/>
+<text text-anchor="start" x="6" y="-367.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK pedido_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="1,-337 1,-359 231,-359 231,-337 1,-337"/>
+<text text-anchor="start" x="6" y="-345.2" font-family="DejaVu Sans" font-size="11.00">FK componente_id</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1,-315 1,-337 231,-337 231,-315 1,-315"/>
+<text text-anchor="start" x="6" y="-323.2" font-family="DejaVu Sans" font-size="11.00">lote, avance_pct, estado_fabricacion</text>
+<polygon fill="#ffffff" stroke="transparent" points="1,-293 1,-315 231,-315 231,-293 1,-293"/>
+<text text-anchor="start" x="6" y="-301.2" font-family="DejaVu Sans" font-size="11.00">inicio_prev, fin_prev, inicio_real, fin_real</text>
+<polygon fill="none" stroke="#a1b6c6" points="0,-292 0,-412 232,-412 232,-292 0,-292"/>
+</g>
+<!-- f -->
+<g id="node9" class="node">
+<title>f</title>
+<polygon fill="#136756" stroke="transparent" points="64,-224 64,-254 312,-254 312,-224 64,-224"/>
+<text text-anchor="start" x="137.5" y="-237.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">LIBERACION_FAB</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="64,-202 64,-224 312,-224 312,-202 64,-202"/>
+<text text-anchor="start" x="69" y="-210.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK linea_id, revision_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="64,-180 64,-202 312,-202 312,-180 64,-180"/>
+<text text-anchor="start" x="69" y="-188.2" font-family="DejaVu Sans" font-size="11.00">estado, enviada_en, congelada_en</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="64,-158 64,-180 312,-180 312,-158 64,-158"/>
+<text text-anchor="start" x="69" y="-166.2" font-family="DejaVu Sans" font-size="11.00">FK enviada_por, congelada_por → USUARIO</text>
+<polygon fill="none" stroke="#a1b6c6" points="63,-157 63,-255 313,-255 313,-157 63,-157"/>
+</g>
+<!-- s -->
+<g id="node10" class="node">
+<title>s</title>
+<polygon fill="#724b85" stroke="transparent" points="161,-89 161,-119 378,-119 378,-89 161,-89"/>
+<text text-anchor="start" x="209.5" y="-102.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">SOLICITUD_CAMBIO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="161,-67 161,-89 378,-89 378,-67 161,-67"/>
+<text text-anchor="start" x="166" y="-75.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK liberacion_base_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="161,-45 161,-67 378,-67 378,-45 161,-45"/>
+<text text-anchor="start" x="166" y="-53.2" font-family="DejaVu Sans" font-size="11.00">FK revision_propuesta_id</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="161,-23 161,-45 378,-45 378,-23 161,-23"/>
+<text text-anchor="start" x="166" y="-31.2" font-family="DejaVu Sans" font-size="11.00">FK resuelta_por → USUARIO, opc.</text>
+<polygon fill="#ffffff" stroke="transparent" points="161,-1 161,-23 378,-23 378,-1 161,-1"/>
+<text text-anchor="start" x="166" y="-9.2" font-family="DejaVu Sans" font-size="11.00">motivo, impacto, estado, resuelta_en</text>
+<polygon fill="none" stroke="#a1b6c6" points="159.5,0 159.5,-120 378.5,-120 378.5,0 159.5,0"/>
+</g>
+</g>
+</svg>
+</div><figcaption>E-R 1 · Identidad, versiones y fabricación <a class="download" download="03_er_bim_y_suministro.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwpwIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiM0NjU0NzAiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlBST1lFQ1RPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5ub21icmUsIHJlZmVyZW5jaWE8L1REPjwvVFI+PC9UQUJMRT4+XTsKYyBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5DT01QT05FTlRFPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHByb3llY3RvX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5VUSBpZF9sb2dpYmltLCBub21icmU8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmVzdGFkb19jaWNsbywgdWJpY2FjaW9uX3JlYWw8L1REPjwvVFI+PC9UQUJMRT4+XTsKbSBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5NT0RFTE9fQklNPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHByb3llY3RvX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5yZWZlcmVuY2lhLCBkaXNjaXBsaW5hPC9URD48L1RSPjwvVEFCTEU+Pl07Cm12IFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxZDU3NzUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlZFUlNJT05fQklNPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIG1vZGVsb19pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+cmV2aXNpb24sIHVyaSwgaGFzaCwgcmVnaXN0cmFkYV9lbjwvVEQ+PC9UUj48L1RBQkxFPj5dOwp2IFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxZDU3NzUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlZJTkNVTE9fQklNPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHZlcnNpb25fYmltX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5GSyBjb21wb25lbnRlX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5pZF9leHRlcm5vLCBlc3F1ZW1hLCBtZXRvZG88L1REPjwvVFI+PC9UQUJMRT4+XTsKciBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SRVZJU0lPTl9URUNOSUNBPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIGNvbXBvbmVudGVfaWQ8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPm51bWVybywgb3JpZ2VuLCBlc3RhZG88L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmxhcmdvX21tLCBhbmNob19tbSwgYWx0b19tbTwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+bWFzYV9uZXRhX2tnLCBtYXRlcmlhbGVzPC9URD48L1RSPjwvVEFCTEU+Pl07Cm8gW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+UEVESURPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHByb3llY3RvX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5GSyBwcm92ZWVkb3JfaWQg4oaSIE9SR0FOSVpBQ0lPTjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+cmVmZXJlbmNpYSwgZXN0YWRvLCBmZWNoYV9wZWRpZG88L1REPjwvVFI+PC9UQUJMRT4+XTsKbCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5MSU5FQV9TVU1JTklTVFJPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHBlZGlkb19pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+RksgY29tcG9uZW50ZV9pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+bG90ZSwgYXZhbmNlX3BjdCwgZXN0YWRvX2ZhYnJpY2FjaW9uPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5pbmljaW9fcHJldiwgZmluX3ByZXYsIGluaWNpb19yZWFsLCBmaW5fcmVhbDwvVEQ+PC9UUj48L1RBQkxFPj5dOwpmIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxMzY3NTYiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkxJQkVSQUNJT05fRkFCPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIGxpbmVhX2lkLCByZXZpc2lvbl9pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+ZXN0YWRvLCBlbnZpYWRhX2VuLCBjb25nZWxhZGFfZW48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkZLIGVudmlhZGFfcG9yLCBjb25nZWxhZGFfcG9yIOKGkiBVU1VBUklPPC9URD48L1RSPjwvVEFCTEU+Pl07CnMgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzcyNGI4NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+U09MSUNJVFVEX0NBTUJJTzwvQj48L0ZPTlQ+PC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5QSyBpZCDCtyBGSyBsaWJlcmFjaW9uX2Jhc2VfaWQ8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPkZLIHJldmlzaW9uX3Byb3B1ZXN0YV9pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+RksgcmVzdWVsdGFfcG9yIOKGkiBVU1VBUklPLCBvcGMuPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5tb3Rpdm8sIGltcGFjdG8sIGVzdGFkbywgcmVzdWVsdGFfZW48L1REPjwvVFI+PC9UQUJMRT4+XTsKcCAtPiBjIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CnAgLT4gbSBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpwIC0+IG8gW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKbSAtPiBtdiBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwptdiAtPiB2IFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CmMgLT4gdiBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpjIC0+IHIgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKbyAtPiBsIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CmMgLT4gbCBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpsIC0+IGYgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKciAtPiBmIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CmYgLT4gcyBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpyIC0+IHMgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKfQo=">Descargar fuente DOT</a></figcaption></figure>
+<figure><div class="diagram"><svg role="img" aria-label="E-R 2 · Embalaje físico, expedición y recepción" width="705pt" height="906pt"
+ viewBox="0.00 0.00 705.16 906.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(10.08 896.08)">
+<title>G</title>
+<!-- p&#45;&gt;c -->
+<g id="edge1" class="edge">
+<title>p&#45;&gt;c</title>
+<path fill="none" stroke="#607487" d="M356.22,-827.63C343.46,-819.52 329.6,-810.71 316.6,-802.44"/>
+<polygon fill="#607487" stroke="#607487" points="364.13,-828.21 360.11,-834.54 358.84,-833.74 362.87,-827.41 364.13,-828.21"/>
+<polyline fill="none" stroke="#607487" points="362.75,-831.78 359.59,-829.77 "/>
+<polygon fill="#607487" stroke="#607487" points="360.97,-826.2 356.94,-832.53 355.68,-831.72 359.7,-825.39 360.97,-826.2"/>
+<polyline fill="none" stroke="#607487" points="359.59,-829.77 356.42,-827.75 "/>
+<polygon fill="#607487" stroke="#607487" points="311.28,-799.06 306.76,-792.19 308.12,-797.05 304.95,-795.03 304.95,-795.03 304.95,-795.03 308.12,-797.05 303.14,-797.88 311.28,-799.06 311.28,-799.06"/>
+<ellipse fill="none" stroke="#607487" cx="313.81" cy="-800.67" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;b -->
+<g id="edge2" class="edge">
+<title>p&#45;&gt;b</title>
+<path fill="none" stroke="#607487" d="M401.96,-824.15C395.83,-722.51 378,-427 378,-427 378,-427 365.44,-415.06 349.18,-399.6"/>
+<polygon fill="#607487" stroke="#607487" points="406.11,-830.71 398.62,-831.17 398.53,-829.67 406.02,-829.22 406.11,-830.71"/>
+<polyline fill="none" stroke="#607487" points="402.41,-831.69 402.19,-827.94 "/>
+<polygon fill="#607487" stroke="#607487" points="405.88,-826.97 398.4,-827.42 398.31,-825.92 405.79,-825.47 405.88,-826.97"/>
+<polyline fill="none" stroke="#607487" points="402.19,-827.94 401.96,-824.2 "/>
+<polygon fill="#607487" stroke="#607487" points="344.68,-395.33 341.56,-387.71 341.96,-392.74 339.24,-390.16 339.24,-390.16 339.24,-390.16 341.96,-392.74 336.91,-392.6 344.68,-395.33 344.68,-395.33"/>
+<ellipse fill="none" stroke="#607487" cx="346.85" cy="-397.39" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;n -->
+<g id="edge3" class="edge">
+<title>p&#45;&gt;n</title>
+<path fill="none" stroke="#607487" d="M427.14,-825.4C447.54,-796.66 478.14,-753.55 505.14,-715.52"/>
+<polygon fill="#607487" stroke="#607487" points="426.04,-833.42 419.93,-829.08 420.79,-827.86 426.91,-832.2 426.04,-833.42"/>
+<polyline fill="none" stroke="#607487" points="422.55,-831.87 424.72,-828.81 "/>
+<polygon fill="#607487" stroke="#607487" points="428.21,-830.37 422.1,-826.03 422.97,-824.8 429.08,-829.14 428.21,-830.37"/>
+<polyline fill="none" stroke="#607487" points="424.72,-828.81 426.89,-825.75 "/>
+<polygon fill="#607487" stroke="#607487" points="508.67,-710.54 515.76,-706.38 510.84,-707.48 513.01,-704.42 513.01,-704.42 513.01,-704.42 510.84,-707.48 510.26,-702.47 508.67,-710.54 508.67,-710.54"/>
+<ellipse fill="none" stroke="#607487" cx="506.93" cy="-712.99" rx="3" ry="3"/>
+</g>
+<!-- c&#45;&gt;r -->
+<g id="edge4" class="edge">
+<title>c&#45;&gt;r</title>
+<path fill="none" stroke="#607487" d="M254.88,-733.31C249.94,-715.06 243.81,-692.41 238.65,-673.35"/>
+<polygon fill="#607487" stroke="#607487" points="260.31,-739.02 253.07,-740.98 252.68,-739.53 259.92,-737.57 260.31,-739.02"/>
+<polyline fill="none" stroke="#607487" points="256.89,-740.72 255.91,-737.1 "/>
+<polygon fill="#607487" stroke="#607487" points="259.33,-735.4 252.09,-737.36 251.7,-735.91 258.94,-733.95 259.33,-735.4"/>
+<polyline fill="none" stroke="#607487" points="255.91,-737.1 254.93,-733.48 "/>
+<polygon fill="#607487" stroke="#607487" points="237.06,-667.46 238.36,-659.34 236.08,-663.84 235.1,-660.22 235.1,-660.22 235.1,-660.22 236.08,-663.84 231.84,-661.1 237.06,-667.46 237.06,-667.46"/>
+<ellipse fill="none" stroke="#607487" cx="237.84" cy="-670.36" rx="3" ry="3"/>
+</g>
+<!-- r&#45;&gt;e -->
+<g id="edge5" class="edge">
+<title>r&#45;&gt;e</title>
+<path fill="none" stroke="#607487" d="M228,-598.14C228,-580.76 228,-559.02 228,-538.78"/>
+<polygon fill="#607487" stroke="#607487" points="231.75,-604.96 224.25,-604.96 224.25,-603.46 231.75,-603.46 231.75,-604.96"/>
+<polyline fill="none" stroke="#607487" points="228,-605.71 228,-601.96 "/>
+<polygon fill="#607487" stroke="#607487" points="231.75,-601.21 224.25,-601.21 224.25,-599.71 231.75,-599.71 231.75,-601.21"/>
+<polyline fill="none" stroke="#607487" points="228,-601.96 228,-598.21 "/>
+<polygon fill="#607487" stroke="#607487" points="228,-532.58 231.38,-525.08 228,-528.83 228,-525.08 228,-525.08 228,-525.08 228,-528.83 224.62,-525.08 228,-532.58 228,-532.58"/>
+<ellipse fill="none" stroke="#607487" cx="228" cy="-535.58" rx="3" ry="3"/>
+</g>
+<!-- r&#45;&gt;cb -->
+<g id="edge6" class="edge">
+<title>r&#45;&gt;cb</title>
+<path fill="none" stroke="#607487" d="M184.9,-601.46C140.27,-569.83 77,-525 77,-525 77,-525 77,-427 77,-427 77,-427 82.95,-306.92 86.47,-235.94"/>
+<polygon fill="#607487" stroke="#607487" points="192.62,-602.33 188.28,-608.45 187.06,-607.58 191.39,-601.46 192.62,-602.33"/>
+<polyline fill="none" stroke="#607487" points="191.06,-605.82 188,-603.66 "/>
+<polygon fill="#607487" stroke="#607487" points="189.56,-600.16 185.22,-606.28 184,-605.42 188.33,-599.3 189.56,-600.16"/>
+<polyline fill="none" stroke="#607487" points="188,-603.66 184.94,-601.49 "/>
+<polygon fill="#607487" stroke="#607487" points="86.79,-229.51 90.54,-222.19 86.98,-225.76 87.16,-222.02 87.16,-222.02 87.16,-222.02 86.98,-225.76 83.79,-221.85 86.79,-229.51 86.79,-229.51"/>
+<ellipse fill="none" stroke="#607487" cx="86.64" cy="-232.51" rx="3" ry="3"/>
+</g>
+<!-- e&#45;&gt;b -->
+<g id="edge7" class="edge">
+<title>e&#45;&gt;b</title>
+<path fill="none" stroke="#607487" d="M247.68,-417.17C249.24,-412.59 250.82,-407.94 252.4,-403.29"/>
+<polygon fill="#607487" stroke="#607487" points="248.24,-427.15 241.14,-424.73 241.63,-423.31 248.73,-425.73 248.24,-427.15"/>
+<polyline fill="none" stroke="#607487" points="244.45,-426.65 245.66,-423.1 "/>
+<ellipse fill="none" stroke="#607487" cx="246.63" cy="-420.26" rx="3" ry="3"/>
+<polygon fill="#607487" stroke="#607487" points="254.43,-397.33 260.04,-391.31 255.64,-393.78 256.85,-390.23 256.85,-390.23 256.85,-390.23 255.64,-393.78 253.65,-389.14 254.43,-397.33 254.43,-397.33"/>
+<ellipse fill="none" stroke="#607487" cx="253.46" cy="-400.17" rx="3" ry="3"/>
+</g>
+<!-- b&#45;&gt;cb -->
+<g id="edge8" class="edge">
+<title>b&#45;&gt;cb</title>
+<path fill="none" stroke="#607487" d="M193.27,-264.87C178.2,-253.32 162.78,-241.51 148.57,-230.63"/>
+<polygon fill="#607487" stroke="#607487" points="201.4,-266.37 196.84,-272.33 195.65,-271.42 200.21,-265.46 201.4,-266.37"/>
+<polyline fill="none" stroke="#607487" points="199.72,-269.81 196.74,-267.53 "/>
+<polygon fill="#607487" stroke="#607487" points="198.43,-264.09 193.87,-270.05 192.68,-269.13 197.24,-263.18 198.43,-264.09"/>
+<polyline fill="none" stroke="#607487" points="196.74,-267.53 193.77,-265.25 "/>
+<polygon fill="#607487" stroke="#607487" points="143.42,-226.69 139.52,-219.45 140.45,-224.4 137.47,-222.12 137.47,-222.12 137.47,-222.12 140.45,-224.4 135.42,-224.8 143.42,-226.69 143.42,-226.69"/>
+<ellipse fill="none" stroke="#607487" cx="145.8" cy="-228.51" rx="3" ry="3"/>
+</g>
+<!-- b&#45;&gt;nb -->
+<g id="edge9" class="edge">
+<title>b&#45;&gt;nb</title>
+<path fill="none" stroke="#607487" d="M317.31,-263.04C320.94,-257.09 324.61,-251.09 328.22,-245.19"/>
+<polygon fill="#607487" stroke="#607487" points="316.89,-270.91 310.49,-267 311.27,-265.72 317.67,-269.63 316.89,-270.91"/>
+<polyline fill="none" stroke="#607487" points="313.3,-269.6 315.26,-266.4 "/>
+<polygon fill="#607487" stroke="#607487" points="318.85,-267.71 312.45,-263.8 313.23,-262.52 319.63,-266.43 318.85,-267.71"/>
+<polyline fill="none" stroke="#607487" points="315.26,-266.4 317.21,-263.2 "/>
+<polygon fill="#607487" stroke="#607487" points="331.58,-239.69 338.37,-235.05 333.53,-236.49 335.49,-233.29 335.49,-233.29 335.49,-233.29 333.53,-236.49 332.61,-231.53 331.58,-239.69 331.58,-239.69"/>
+<ellipse fill="none" stroke="#607487" cx="330.01" cy="-242.25" rx="3" ry="3"/>
+</g>
+<!-- n&#45;&gt;nb -->
+<g id="edge10" class="edge">
+<title>n&#45;&gt;nb</title>
+<path fill="none" stroke="#607487" d="M534.12,-554.56C494.46,-448.22 428,-270 428,-270 428,-270 419.62,-258.7 408.98,-244.34"/>
+<polygon fill="#607487" stroke="#607487" points="540.06,-559.76 533.03,-562.38 532.51,-560.98 539.54,-558.35 540.06,-559.76"/>
+<polyline fill="none" stroke="#607487" points="536.81,-561.77 535.5,-558.26 "/>
+<polygon fill="#607487" stroke="#607487" points="538.75,-556.25 531.72,-558.87 531.2,-557.46 538.23,-554.84 538.75,-556.25"/>
+<polyline fill="none" stroke="#607487" points="535.5,-558.26 534.19,-554.75 "/>
+<polygon fill="#607487" stroke="#607487" points="405.38,-239.48 403.63,-231.45 403.15,-236.47 400.92,-233.46 400.92,-233.46 400.92,-233.46 403.15,-236.47 398.21,-235.47 405.38,-239.48 405.38,-239.48"/>
+<ellipse fill="none" stroke="#607487" cx="407.17" cy="-241.89" rx="3" ry="3"/>
+</g>
+<!-- nb&#45;&gt;x -->
+<g id="edge11" class="edge">
+<title>nb&#45;&gt;x</title>
+<path fill="none" stroke="#607487" d="M365,-127.35C365,-122.39 365,-117.35 365,-112.34"/>
+<polygon fill="#607487" stroke="#607487" points="368.75,-134.23 361.25,-134.23 361.25,-132.73 368.75,-132.73 368.75,-134.23"/>
+<polyline fill="none" stroke="#607487" points="365,-134.98 365,-131.23 "/>
+<polygon fill="#607487" stroke="#607487" points="368.75,-130.48 361.25,-130.48 361.25,-128.98 368.75,-128.98 368.75,-130.48"/>
+<polyline fill="none" stroke="#607487" points="365,-131.23 365,-127.48 "/>
+<polygon fill="#607487" stroke="#607487" points="365,-105.89 368.38,-98.39 365,-102.14 365,-98.39 365,-98.39 365,-98.39 365,-102.14 361.62,-98.39 365,-105.89 365,-105.89"/>
+<ellipse fill="none" stroke="#607487" cx="365" cy="-108.89" rx="3" ry="3"/>
+</g>
+<!-- p -->
+<g id="node1" class="node">
+<title>p</title>
+<polygon fill="#465470" stroke="transparent" points="362,-855 362,-885 447,-885 447,-855 362,-855"/>
+<text text-anchor="start" x="371" y="-868.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">PROYECTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="362,-833 362,-855 447,-855 447,-833 362,-833"/>
+<text text-anchor="start" x="367" y="-841.2" font-family="DejaVu Sans" font-size="11.00">PK id</text>
+<polygon fill="none" stroke="#a1b6c6" points="360.5,-832 360.5,-886 447.5,-886 447.5,-832 360.5,-832"/>
+</g>
+<!-- c -->
+<g id="node2" class="node">
+<title>c</title>
+<polygon fill="#1d5775" stroke="transparent" points="199,-764 199,-794 330,-794 330,-764 199,-764"/>
+<text text-anchor="start" x="221" y="-777.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">COMPONENTE</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="199,-742 199,-764 330,-764 330,-742 199,-742"/>
+<text text-anchor="start" x="204" y="-750.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="none" stroke="#a1b6c6" points="197.5,-741 197.5,-795 330.5,-795 330.5,-741 197.5,-741"/>
+</g>
+<!-- r -->
+<g id="node3" class="node">
+<title>r</title>
+<polygon fill="#1d5775" stroke="transparent" points="153,-629 153,-659 303,-659 303,-629 153,-629"/>
+<text text-anchor="start" x="170" y="-642.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">REVISION_TECNICA</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="153,-607 153,-629 303,-629 303,-607 153,-607"/>
+<text text-anchor="start" x="158" y="-615.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK componente_id</text>
+<polygon fill="none" stroke="#a1b6c6" points="152,-606 152,-660 304,-660 304,-606 152,-606"/>
+</g>
+<!-- e -->
+<g id="node4" class="node">
+<title>e</title>
+<polygon fill="#136756" stroke="transparent" points="91,-494 91,-524 366,-524 366,-494 91,-494"/>
+<text text-anchor="start" x="176.5" y="-507.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">FICHA_EMBALAJE</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="91,-472 91,-494 366,-494 366,-472 91,-472"/>
+<text text-anchor="start" x="96" y="-480.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK revision_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="91,-450 91,-472 366,-472 366,-450 91,-450"/>
+<text text-anchor="start" x="96" y="-458.2" font-family="DejaVu Sans" font-size="11.00">version, tipo, estado, materiales</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="91,-428 91,-450 366,-450 366,-428 91,-428"/>
+<text text-anchor="start" x="96" y="-436.2" font-family="DejaVu Sans" font-size="11.00">instrucciones, base_largo_mm, base_ancho_mm</text>
+<polygon fill="none" stroke="#a1b6c6" points="89.5,-427 89.5,-525 366.5,-525 366.5,-427 89.5,-427"/>
+</g>
+<!-- b -->
+<g id="node5" class="node">
+<title>b</title>
+<polygon fill="#136756" stroke="transparent" points="139,-359 139,-389 415,-389 415,-359 139,-359"/>
+<text text-anchor="start" x="257" y="-372.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">BULTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="139,-337 139,-359 415,-359 415,-337 139,-337"/>
+<text text-anchor="start" x="144" y="-345.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id, ficha_id (opcional)</text>
+<polygon fill="#ffffff" stroke="transparent" points="139,-315 139,-337 415,-337 415,-315 139,-315"/>
+<text text-anchor="start" x="144" y="-323.2" font-family="DejaVu Sans" font-size="11.00">codigo, estado, tipo</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="139,-293 139,-315 415,-315 415,-293 139,-293"/>
+<text text-anchor="start" x="144" y="-301.2" font-family="DejaVu Sans" font-size="11.00">largo_mm, ancho_mm, alto_mm, masa_bruta_kg</text>
+<polygon fill="#ffffff" stroke="transparent" points="139,-271 139,-293 415,-293 415,-271 139,-271"/>
+<text text-anchor="start" x="144" y="-279.2" font-family="DejaVu Sans" font-size="11.00">apilable, manipulacion</text>
+<polygon fill="none" stroke="#a1b6c6" points="138,-270 138,-390 416,-390 416,-270 138,-270"/>
+</g>
+<!-- cb -->
+<g id="node6" class="node">
+<title>cb</title>
+<polygon fill="#136756" stroke="transparent" points="1,-191 1,-221 177,-221 177,-191 1,-191"/>
+<text text-anchor="start" x="30.5" y="-204.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">CONTENIDO_BULTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1,-169 1,-191 177,-191 177,-169 1,-169"/>
+<text text-anchor="start" x="6" y="-177.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK bulto_id, revision_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="1,-147 1,-169 177,-169 177,-147 1,-147"/>
+<text text-anchor="start" x="6" y="-155.2" font-family="DejaVu Sans" font-size="11.00">alta_en, baja_en</text>
+<polygon fill="none" stroke="#a1b6c6" points="0,-146 0,-222 178,-222 178,-146 0,-146"/>
+</g>
+<!-- n -->
+<g id="node7" class="node">
+<title>n</title>
+<polygon fill="#136756" stroke="transparent" points="442,-673 442,-703 684,-703 684,-673 442,-673"/>
+<text text-anchor="start" x="544" y="-686.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">ENVIO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="442,-651 442,-673 684,-673 684,-651 442,-651"/>
+<text text-anchor="start" x="447" y="-659.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="442,-629 442,-651 684,-651 684,-629 442,-629"/>
+<text text-anchor="start" x="447" y="-637.2" font-family="DejaVu Sans" font-size="11.00">FK remitente, consignatario, transportista</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="442,-607 442,-629 684,-629 684,-607 442,-607"/>
+<text text-anchor="start" x="447" y="-615.2" font-family="DejaVu Sans" font-size="11.00">origen, destino, modo, sentido, estado</text>
+<polygon fill="#ffffff" stroke="transparent" points="442,-585 442,-607 684,-607 684,-585 442,-585"/>
+<text text-anchor="start" x="447" y="-593.2" font-family="DejaVu Sans" font-size="11.00">carga_prev, entrega_prev, salida_real</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="442,-563 442,-585 684,-585 684,-563 442,-563"/>
+<text text-anchor="start" x="447" y="-571.2" font-family="DejaVu Sans" font-size="11.00">capacidad_disponible_kg</text>
+<polygon fill="none" stroke="#a1b6c6" points="441,-562 441,-704 685,-704 685,-562 441,-562"/>
+</g>
+<!-- nb -->
+<g id="node8" class="node">
+<title>nb</title>
+<polygon fill="#136756" stroke="transparent" points="262,-202 262,-232 468,-232 468,-202 262,-202"/>
+<text text-anchor="start" x="324" y="-215.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">BULTO_ENVIO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="262,-180 262,-202 468,-202 468,-180 262,-180"/>
+<text text-anchor="start" x="267" y="-188.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK envio_id, bulto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="262,-158 262,-180 468,-180 468,-158 262,-158"/>
+<text text-anchor="start" x="267" y="-166.2" font-family="DejaVu Sans" font-size="11.00">orden_carga, masa_bruta_salida_kg</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="262,-136 262,-158 468,-158 468,-136 262,-136"/>
+<text text-anchor="start" x="267" y="-144.2" font-family="DejaVu Sans" font-size="11.00">asignado_en, liberado_en</text>
+<polygon fill="none" stroke="#a1b6c6" points="261,-135 261,-233 469,-233 469,-135 261,-135"/>
+</g>
+<!-- x -->
+<g id="node9" class="node">
+<title>x</title>
+<polygon fill="#136756" stroke="transparent" points="242,-67 242,-97 488,-97 488,-67 242,-67"/>
+<text text-anchor="start" x="307.5" y="-80.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">RECEPCION_BULTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="242,-45 242,-67 488,-67 488,-45 242,-45"/>
+<text text-anchor="start" x="247" y="-53.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK bulto_envio_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="242,-23 242,-45 488,-45 488,-23 242,-23"/>
+<text text-anchor="start" x="247" y="-31.2" font-family="DejaVu Sans" font-size="11.00">FK usuario_id → USUARIO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="242,-1 242,-23 488,-23 488,-1 242,-1"/>
+<text text-anchor="start" x="247" y="-9.2" font-family="DejaVu Sans" font-size="11.00">fecha, resultado, ubicacion, observaciones</text>
+<polygon fill="none" stroke="#a1b6c6" points="241,0 241,-98 489,-98 489,0 241,0"/>
+</g>
+</g>
+</svg>
+</div><figcaption>E-R 2 · Embalaje físico, expedición y recepción <a class="download" download="04_er_bultos_y_envios.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwpwIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiM0NjU0NzAiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlBST1lFQ1RPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkPC9URD48L1RSPjwvVEFCTEU+Pl07CmMgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzFkNTc3NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+Q09NUE9ORU5URTwvQj48L0ZPTlQ+PC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5QSyBpZCDCtyBGSyBwcm95ZWN0b19pZDwvVEQ+PC9UUj48L1RBQkxFPj5dOwpyIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxZDU3NzUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlJFVklTSU9OX1RFQ05JQ0E8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UEsgaWQgwrcgRksgY29tcG9uZW50ZV9pZDwvVEQ+PC9UUj48L1RBQkxFPj5dOwplIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxMzY3NTYiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkZJQ0hBX0VNQkFMQUpFPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHJldmlzaW9uX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij52ZXJzaW9uLCB0aXBvLCBlc3RhZG8sIG1hdGVyaWFsZXM8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmluc3RydWNjaW9uZXMsIGJhc2VfbGFyZ29fbW0sIGJhc2VfYW5jaG9fbW08L1REPjwvVFI+PC9UQUJMRT4+XTsKYiBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5CVUxUTzwvQj48L0ZPTlQ+PC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5QSyBpZCDCtyBGSyBwcm95ZWN0b19pZCwgZmljaGFfaWQgKG9wY2lvbmFsKTwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+Y29kaWdvLCBlc3RhZG8sIHRpcG88L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmxhcmdvX21tLCBhbmNob19tbSwgYWx0b19tbSwgbWFzYV9icnV0YV9rZzwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+YXBpbGFibGUsIG1hbmlwdWxhY2lvbjwvVEQ+PC9UUj48L1RBQkxFPj5dOwpjYiBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5DT05URU5JRE9fQlVMVE88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UEsgaWQgwrcgRksgYnVsdG9faWQsIHJldmlzaW9uX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5hbHRhX2VuLCBiYWphX2VuPC9URD48L1RSPjwvVEFCTEU+Pl07Cm4gW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+RU5WSU88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UEsgaWQgwrcgRksgcHJveWVjdG9faWQ8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPkZLIHJlbWl0ZW50ZSwgY29uc2lnbmF0YXJpbywgdHJhbnNwb3J0aXN0YTwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+b3JpZ2VuLCBkZXN0aW5vLCBtb2RvLCBzZW50aWRvLCBlc3RhZG88L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPmNhcmdhX3ByZXYsIGVudHJlZ2FfcHJldiwgc2FsaWRhX3JlYWw8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmNhcGFjaWRhZF9kaXNwb25pYmxlX2tnPC9URD48L1RSPjwvVEFCTEU+Pl07Cm5iIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxMzY3NTYiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkJVTFRPX0VOVklPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIGVudmlvX2lkLCBidWx0b19pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+b3JkZW5fY2FyZ2EsIG1hc2FfYnJ1dGFfc2FsaWRhX2tnPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5hc2lnbmFkb19lbiwgbGliZXJhZG9fZW48L1REPjwvVFI+PC9UQUJMRT4+XTsKeCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SRUNFUENJT05fQlVMVE88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UEsgaWQgwrcgRksgYnVsdG9fZW52aW9faWQ8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPkZLIHVzdWFyaW9faWQg4oaSIFVTVUFSSU88L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmZlY2hhLCByZXN1bHRhZG8sIHViaWNhY2lvbiwgb2JzZXJ2YWNpb25lczwvVEQ+PC9UUj48L1RBQkxFPj5dOwpwIC0+IGMgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKcCAtPiBiIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CnAgLT4gbiBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpjIC0+IHIgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKciAtPiBlIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CnIgLT4gY2IgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKZSAtPiBiIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZW9kb3QsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpiIC0+IGNiIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CmIgLT4gbmIgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKbiAtPiBuYiBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwpuYiAtPiB4IFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07Cn0K">Descargar fuente DOT</a></figcaption></figure>
+<figure><div class="diagram"><svg role="img" aria-label="E-R 3 · Actores, documentos, historial e incidencias" width="890pt" height="653pt"
+ viewBox="0.00 0.00 889.66 653.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(10.08 643.08)">
+<title>G</title>
+<!-- p&#45;&gt;a -->
+<g id="edge2" class="edge">
+<title>p&#45;&gt;a</title>
+<path fill="none" stroke="#607487" d="M317.86,-446.27C305.09,-424.98 288.19,-396.82 273.84,-372.9"/>
+<polygon fill="#607487" stroke="#607487" points="324.55,-450.13 318.12,-453.99 317.35,-452.71 323.78,-448.85 324.55,-450.13"/>
+<polyline fill="none" stroke="#607487" points="321.72,-452.71 319.79,-449.49 "/>
+<polygon fill="#607487" stroke="#607487" points="322.62,-446.92 316.19,-450.78 315.42,-449.49 321.85,-445.63 322.62,-446.92"/>
+<polyline fill="none" stroke="#607487" points="319.79,-449.49 317.87,-446.28 "/>
+<polygon fill="#607487" stroke="#607487" points="270.67,-367.62 269.71,-359.45 268.74,-364.41 266.81,-361.19 266.81,-361.19 266.81,-361.19 268.74,-364.41 263.92,-362.93 270.67,-367.62 270.67,-367.62"/>
+<ellipse fill="none" stroke="#607487" cx="272.22" cy="-370.19" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;d -->
+<g id="edge4" class="edge">
+<title>p&#45;&gt;d</title>
+<path fill="none" stroke="#607487" d="M286.53,-456.55C229.35,-431.37 144.5,-394 144.5,-394 144.5,-394 132.61,-383.33 118.12,-370.33"/>
+<polygon fill="#607487" stroke="#607487" points="294.53,-455.98 291.51,-462.84 290.13,-462.24 293.16,-455.37 294.53,-455.98"/>
+<polyline fill="none" stroke="#607487" points="293.71,-459.71 290.27,-458.2 "/>
+<polygon fill="#607487" stroke="#607487" points="291.1,-454.47 288.08,-461.33 286.7,-460.73 289.73,-453.86 291.1,-454.47"/>
+<polyline fill="none" stroke="#607487" points="290.27,-458.2 286.84,-456.69 "/>
+<polygon fill="#607487" stroke="#607487" points="113.37,-366.06 110.04,-358.54 110.57,-363.55 107.78,-361.05 107.78,-361.05 107.78,-361.05 110.57,-363.55 105.53,-363.56 113.37,-366.06 113.37,-366.06"/>
+<ellipse fill="none" stroke="#607487" cx="115.6" cy="-368.06" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;e -->
+<g id="edge8" class="edge">
+<title>p&#45;&gt;e</title>
+<path fill="none" stroke="#607487" d="M388.71,-461.12C444.68,-441.57 526.5,-413 526.5,-413 526.5,-413 596.5,-394 596.5,-394 596.5,-394 596.67,-393.91 596.99,-393.73"/>
+<polygon fill="#607487" stroke="#607487" points="383.28,-466.99 380.81,-459.9 382.22,-459.41 384.7,-466.49 383.28,-466.99"/>
+<polyline fill="none" stroke="#607487" points="381.34,-463.69 384.88,-462.46 "/>
+<polygon fill="#607487" stroke="#607487" points="386.82,-465.75 384.35,-458.67 385.76,-458.17 388.24,-465.25 386.82,-465.75"/>
+<polyline fill="none" stroke="#607487" points="384.88,-462.46 388.42,-461.22 "/>
+<polygon fill="#607487" stroke="#607487" points="602.31,-390.72 610.5,-389.97 605.58,-388.88 608.84,-387.03 608.84,-387.03 608.84,-387.03 605.58,-388.88 607.18,-384.09 602.31,-390.72 602.31,-390.72"/>
+<ellipse fill="none" stroke="#607487" cx="599.7" cy="-392.19" rx="3" ry="3"/>
+</g>
+<!-- p&#45;&gt;i -->
+<g id="edge10" class="edge">
+<title>p&#45;&gt;i</title>
+<path fill="none" stroke="#607487" d="M365.12,-446.82C375.78,-434.39 388.5,-419.56 401.35,-404.58"/>
+<polygon fill="#607487" stroke="#607487" points="363.4,-454.58 357.7,-449.7 358.68,-448.56 364.37,-453.44 363.4,-454.58"/>
+<polyline fill="none" stroke="#607487" points="360.06,-452.71 362.5,-449.86 "/>
+<polygon fill="#607487" stroke="#607487" points="365.84,-451.73 360.15,-446.85 361.12,-445.71 366.81,-450.59 365.84,-451.73"/>
+<polyline fill="none" stroke="#607487" points="362.5,-449.86 364.95,-447.01 "/>
+<polygon fill="#607487" stroke="#607487" points="405.37,-399.91 412.81,-396.42 407.81,-397.06 410.25,-394.22 410.25,-394.22 410.25,-394.22 407.81,-397.06 407.69,-392.02 405.37,-399.91 405.37,-399.91"/>
+<ellipse fill="none" stroke="#607487" cx="403.41" cy="-402.19" rx="3" ry="3"/>
+</g>
+<!-- o&#45;&gt;u -->
+<g id="edge1" class="edge">
+<title>o&#45;&gt;u</title>
+<path fill="none" stroke="#607487" d="M551.5,-547.1C551.5,-542.11 551.5,-537.02 551.5,-531.98"/>
+<polygon fill="#607487" stroke="#607487" points="555.25,-556.25 547.75,-556.25 547.75,-554.75 555.25,-554.75 555.25,-556.25"/>
+<polyline fill="none" stroke="#607487" points="551.5,-557 551.5,-553.25 "/>
+<ellipse fill="none" stroke="#607487" cx="551.5" cy="-550.25" rx="3" ry="3"/>
+<polygon fill="#607487" stroke="#607487" points="551.5,-525.58 554.88,-518.08 551.5,-521.83 551.5,-518.08 551.5,-518.08 551.5,-518.08 551.5,-521.83 548.12,-518.08 551.5,-525.58 551.5,-525.58"/>
+<ellipse fill="none" stroke="#607487" cx="551.5" cy="-528.58" rx="3" ry="3"/>
+</g>
+<!-- u&#45;&gt;a -->
+<g id="edge3" class="edge">
+<title>u&#45;&gt;a</title>
+<path fill="none" stroke="#607487" d="M460.22,-441.52C404.73,-418.73 344.5,-394 344.5,-394 344.5,-394 328.07,-382.5 308.52,-368.81"/>
+<polygon fill="#607487" stroke="#607487" points="468.04,-440.67 465.19,-447.61 463.8,-447.04 466.65,-440.1 468.04,-440.67"/>
+<polyline fill="none" stroke="#607487" points="467.31,-444.43 463.84,-443 "/>
+<polygon fill="#607487" stroke="#607487" points="464.57,-439.25 461.72,-446.19 460.33,-445.62 463.18,-438.68 464.57,-439.25"/>
+<polyline fill="none" stroke="#607487" points="463.84,-443 460.37,-441.58 "/>
+<polygon fill="#607487" stroke="#607487" points="303.57,-365.35 299.36,-358.28 300.5,-363.2 297.43,-361.05 297.43,-361.05 297.43,-361.05 300.5,-363.2 295.49,-363.81 303.57,-365.35 303.57,-365.35"/>
+<ellipse fill="none" stroke="#607487" cx="306.03" cy="-367.07" rx="3" ry="3"/>
+</g>
+<!-- u&#45;&gt;v -->
+<g id="edge6" class="edge">
+<title>u&#45;&gt;v</title>
+<path fill="none" stroke="#607487" d="M643.29,-452.37C729.23,-427.44 844.5,-394 844.5,-394 844.5,-394 844.5,-252 844.5,-252 844.5,-252 693.74,-216.65 584.42,-191.01"/>
+<polygon fill="#607487" stroke="#607487" points="637.62,-457.92 635.53,-450.72 636.97,-450.3 639.06,-457.5 637.62,-457.92"/>
+<polyline fill="none" stroke="#607487" points="635.85,-454.53 639.46,-453.48 "/>
+<polygon fill="#607487" stroke="#607487" points="641.22,-456.88 639.13,-449.67 640.57,-449.26 642.66,-456.46 641.22,-456.88"/>
+<polyline fill="none" stroke="#607487" points="639.46,-453.48 643.06,-452.44 "/>
+<polygon fill="#607487" stroke="#607487" points="578.28,-189.57 571.75,-184.57 574.63,-188.71 570.98,-187.86 570.98,-187.86 570.98,-187.86 574.63,-188.71 570.21,-191.14 578.28,-189.57 578.28,-189.57"/>
+<ellipse fill="none" stroke="#607487" cx="581.2" cy="-190.26" rx="3" ry="3"/>
+<text text-anchor="middle" x="857" y="-320.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">autor</text>
+</g>
+<!-- u&#45;&gt;e -->
+<g id="edge9" class="edge">
+<title>u&#45;&gt;e</title>
+<path fill="none" stroke="#607487" d="M597.58,-436.74C608.89,-426.36 621.36,-414.92 633.9,-403.43"/>
+<polygon fill="#607487" stroke="#607487" points="595.07,-444.13 590,-438.6 591.1,-437.59 596.17,-443.12 595.07,-444.13"/>
+<polyline fill="none" stroke="#607487" points="591.98,-441.87 594.74,-439.34 "/>
+<polygon fill="#607487" stroke="#607487" points="597.83,-441.6 592.76,-436.07 593.87,-435.05 598.94,-440.58 597.83,-441.6"/>
+<polyline fill="none" stroke="#607487" points="594.74,-439.34 597.51,-436.8 "/>
+<polygon fill="#607487" stroke="#607487" points="638.42,-399.28 646.22,-396.7 641.18,-396.75 643.94,-394.22 643.94,-394.22 643.94,-394.22 641.18,-396.75 641.66,-391.73 638.42,-399.28 638.42,-399.28"/>
+<ellipse fill="none" stroke="#607487" cx="636.2" cy="-401.31" rx="3" ry="3"/>
+<text text-anchor="middle" x="633" y="-415.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">autor</text>
+</g>
+<!-- u&#45;&gt;i -->
+<g id="edge11" class="edge">
+<title>u&#45;&gt;i</title>
+<path fill="none" stroke="#607487" d="M512.65,-436.34C505.64,-428.64 500.5,-423 500.5,-423 500.5,-423 498.56,-416.61 495.67,-407.07"/>
+<polygon fill="#607487" stroke="#607487" points="520.03,-438.88 514.49,-443.93 513.48,-442.82 519.02,-437.77 520.03,-438.88"/>
+<polyline fill="none" stroke="#607487" points="517.77,-441.96 515.24,-439.19 "/>
+<polygon fill="#607487" stroke="#607487" points="517.51,-436.11 511.96,-441.16 510.95,-440.05 516.5,-435 517.51,-436.11"/>
+<polyline fill="none" stroke="#607487" points="515.24,-439.19 512.72,-436.41 "/>
+<polygon fill="#607487" stroke="#607487" points="493.92,-401.28 494.97,-393.12 492.83,-397.69 491.74,-394.1 491.74,-394.1 491.74,-394.1 492.83,-397.69 488.51,-395.08 493.92,-401.28 493.92,-401.28"/>
+<ellipse fill="none" stroke="#607487" cx="494.79" cy="-404.15" rx="3" ry="3"/>
+<text text-anchor="middle" x="511" y="-415.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">abre</text>
+</g>
+<!-- u&#45;&gt;i -->
+<g id="edge12" class="edge">
+<title>u&#45;&gt;i</title>
+<path fill="none" stroke="#607487" d="M531.8,-432.56C527.14,-421.58 523.5,-413 523.5,-413 523.5,-413 521.94,-410.38 519.35,-406.03"/>
+<polygon fill="#607487" stroke="#607487" points="538.86,-439.6 531.95,-442.53 531.37,-441.15 538.27,-438.22 538.86,-439.6"/>
+<polyline fill="none" stroke="#607487" points="535.7,-441.76 534.24,-438.3 "/>
+<ellipse fill="none" stroke="#607487" cx="533.06" cy="-435.54" rx="3" ry="3"/>
+<polygon fill="#607487" stroke="#607487" points="516.1,-400.57 515.16,-392.4 514.18,-397.35 512.26,-394.13 512.26,-394.13 512.26,-394.13 514.18,-397.35 509.36,-395.85 516.1,-400.57 516.1,-400.57"/>
+<ellipse fill="none" stroke="#607487" cx="517.63" cy="-403.15" rx="3" ry="3"/>
+<text text-anchor="middle" x="545.5" y="-415.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">atiende</text>
+</g>
+<!-- d&#45;&gt;v -->
+<g id="edge5" class="edge">
+<title>d&#45;&gt;v</title>
+<path fill="none" stroke="#607487" d="M113.44,-279.87C129.97,-265.04 144.5,-252 144.5,-252 144.5,-252 267.29,-219.53 362.84,-194.26"/>
+<polygon fill="#607487" stroke="#607487" points="110.85,-287.24 105.84,-281.66 106.95,-280.66 111.96,-286.24 110.85,-287.24"/>
+<polyline fill="none" stroke="#607487" points="107.78,-284.95 110.57,-282.45 "/>
+<polygon fill="#607487" stroke="#607487" points="113.64,-284.74 108.63,-279.15 109.74,-278.15 114.75,-283.73 113.64,-284.74"/>
+<polyline fill="none" stroke="#607487" points="110.57,-282.45 113.37,-279.94 "/>
+<polygon fill="#607487" stroke="#607487" points="368.87,-192.67 376.99,-194.01 372.5,-191.71 376.12,-190.75 376.12,-190.75 376.12,-190.75 372.5,-191.71 375.26,-187.49 368.87,-192.67 368.87,-192.67"/>
+<ellipse fill="none" stroke="#607487" cx="365.97" cy="-193.43" rx="3" ry="3"/>
+</g>
+<!-- v&#45;&gt;j -->
+<g id="edge7" class="edge">
+<title>v&#45;&gt;j</title>
+<path fill="none" stroke="#607487" d="M473.5,-107.14C473.5,-101.41 473.5,-95.61 473.5,-89.94"/>
+<polygon fill="#607487" stroke="#607487" points="477.25,-113.95 469.75,-113.95 469.75,-112.45 477.25,-112.45 477.25,-113.95"/>
+<polyline fill="none" stroke="#607487" points="473.5,-114.7 473.5,-110.95 "/>
+<polygon fill="#607487" stroke="#607487" points="477.25,-110.2 469.75,-110.2 469.75,-108.7 477.25,-108.7 477.25,-110.2"/>
+<polyline fill="none" stroke="#607487" points="473.5,-110.95 473.5,-107.2 "/>
+<polygon fill="#607487" stroke="#607487" points="473.5,-83.72 476.88,-76.22 473.5,-79.97 473.5,-76.22 473.5,-76.22 473.5,-76.22 473.5,-79.97 470.12,-76.22 473.5,-83.72 473.5,-83.72"/>
+<ellipse fill="none" stroke="#607487" cx="473.5" cy="-86.72" rx="3" ry="3"/>
+</g>
+<!-- p -->
+<g id="node1" class="node">
+<title>p</title>
+<polygon fill="#465470" stroke="transparent" points="295.5,-476 295.5,-506 380.5,-506 380.5,-476 295.5,-476"/>
+<text text-anchor="start" x="304.5" y="-489.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">PROYECTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="295.5,-454 295.5,-476 380.5,-476 380.5,-454 295.5,-454"/>
+<text text-anchor="start" x="300.5" y="-462.2" font-family="DejaVu Sans" font-size="11.00">PK id</text>
+<polygon fill="none" stroke="#a1b6c6" points="294,-453 294,-507 381,-507 381,-453 294,-453"/>
+</g>
+<!-- o -->
+<g id="node2" class="node">
+<title>o</title>
+<polygon fill="#465470" stroke="transparent" points="493.5,-602 493.5,-632 609.5,-632 609.5,-602 493.5,-602"/>
+<text text-anchor="start" x="504.5" y="-615.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">ORGANIZACION</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="493.5,-580 493.5,-602 609.5,-602 609.5,-580 493.5,-580"/>
+<text text-anchor="start" x="498.5" y="-588.2" font-family="DejaVu Sans" font-size="11.00">PK id</text>
+<polygon fill="#ffffff" stroke="transparent" points="493.5,-558 493.5,-580 609.5,-580 609.5,-558 493.5,-558"/>
+<text text-anchor="start" x="498.5" y="-566.2" font-family="DejaVu Sans" font-size="11.00">nombre, referencia</text>
+<polygon fill="none" stroke="#a1b6c6" points="492.5,-557 492.5,-633 610.5,-633 610.5,-557 492.5,-557"/>
+</g>
+<!-- u -->
+<g id="node3" class="node">
+<title>u</title>
+<polygon fill="#465470" stroke="transparent" points="468.5,-487 468.5,-517 634.5,-517 634.5,-487 468.5,-487"/>
+<text text-anchor="start" x="524" y="-500.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">USUARIO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="468.5,-465 468.5,-487 634.5,-487 634.5,-465 468.5,-465"/>
+<text text-anchor="start" x="473.5" y="-473.2" font-family="DejaVu Sans" font-size="11.00">PK id</text>
+<polygon fill="#ffffff" stroke="transparent" points="468.5,-443 468.5,-465 634.5,-465 634.5,-443 468.5,-443"/>
+<text text-anchor="start" x="473.5" y="-451.2" font-family="DejaVu Sans" font-size="11.00">FK organizacion_id, opcional</text>
+<polygon fill="none" stroke="#a1b6c6" points="467.5,-442 467.5,-518 635.5,-518 635.5,-442 467.5,-442"/>
+</g>
+<!-- a -->
+<g id="node4" class="node">
+<title>a</title>
+<polygon fill="#465470" stroke="transparent" points="158.5,-330 158.5,-360 331.5,-360 331.5,-330 158.5,-330"/>
+<text text-anchor="start" x="184.5" y="-343.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">ACCESO_PROYECTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="158.5,-308 158.5,-330 331.5,-330 331.5,-308 158.5,-308"/>
+<text text-anchor="start" x="163.5" y="-316.2" font-family="DejaVu Sans" font-size="11.00">PK/FK proyecto_id, usuario_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="158.5,-286 158.5,-308 331.5,-308 331.5,-286 158.5,-286"/>
+<text text-anchor="start" x="163.5" y="-294.2" font-family="DejaVu Sans" font-size="11.00">PK rol</text>
+<polygon fill="none" stroke="#a1b6c6" points="157,-285 157,-361 332,-361 332,-285 157,-285"/>
+</g>
+<!-- d -->
+<g id="node5" class="node">
+<title>d</title>
+<polygon fill="#724b85" stroke="transparent" points="1.5,-330 1.5,-360 132.5,-360 132.5,-330 1.5,-330"/>
+<text text-anchor="start" x="27" y="-343.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">DOCUMENTO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1.5,-308 1.5,-330 132.5,-330 132.5,-308 1.5,-308"/>
+<text text-anchor="start" x="6.5" y="-316.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="1.5,-286 1.5,-308 132.5,-308 132.5,-286 1.5,-286"/>
+<text text-anchor="start" x="6.5" y="-294.2" font-family="DejaVu Sans" font-size="11.00">tipo, titulo, referencia</text>
+<polygon fill="none" stroke="#a1b6c6" points="0,-285 0,-361 133,-361 133,-285 0,-285"/>
+</g>
+<!-- v -->
+<g id="node6" class="node">
+<title>v</title>
+<polygon fill="#724b85" stroke="transparent" points="377.5,-182 377.5,-212 569.5,-212 569.5,-182 377.5,-182"/>
+<text text-anchor="start" x="404" y="-195.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">DOCUMENTO_VERSION</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="377.5,-160 377.5,-182 569.5,-182 569.5,-160 377.5,-160"/>
+<text text-anchor="start" x="382.5" y="-168.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK documento_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="377.5,-138 377.5,-160 569.5,-160 569.5,-138 377.5,-138"/>
+<text text-anchor="start" x="382.5" y="-146.2" font-family="DejaVu Sans" font-size="11.00">FK usuario_id · numero, uri, hash</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="377.5,-116 377.5,-138 569.5,-138 569.5,-116 377.5,-116"/>
+<text text-anchor="start" x="382.5" y="-124.2" font-family="DejaVu Sans" font-size="11.00">registrada_en, estado_validacion</text>
+<polygon fill="none" stroke="#a1b6c6" points="376.5,-115 376.5,-213 570.5,-213 570.5,-115 376.5,-115"/>
+</g>
+<!-- j -->
+<g id="node7" class="node">
+<title>j</title>
+<polygon fill="#724b85" stroke="transparent" points="379.5,-45 379.5,-75 568.5,-75 568.5,-45 379.5,-45"/>
+<text text-anchor="start" x="404.5" y="-58.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">DOCUMENTO_VINCULO</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="379.5,-23 379.5,-45 568.5,-45 568.5,-23 379.5,-23"/>
+<text text-anchor="start" x="384.5" y="-31.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK documento_version_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="379.5,-1 379.5,-23 568.5,-23 568.5,-1 379.5,-1"/>
+<text text-anchor="start" x="384.5" y="-9.2" font-family="DejaVu Sans" font-size="11.00">FK objetivo tipado · XOR¹</text>
+<polygon fill="none" stroke="#a1b6c6" points="378,0 378,-76 569,-76 569,0 378,0"/>
+</g>
+<!-- e -->
+<g id="node8" class="node">
+<title>e</title>
+<polygon fill="#724b85" stroke="transparent" points="610.5,-363 610.5,-393 831.5,-393 831.5,-363 610.5,-363"/>
+<text text-anchor="start" x="673.5" y="-376.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">EVENTO_TRAZA</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="610.5,-341 610.5,-363 831.5,-363 831.5,-341 610.5,-341"/>
+<text text-anchor="start" x="615.5" y="-349.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id, usuario_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="610.5,-319 610.5,-341 831.5,-341 831.5,-319 610.5,-319"/>
+<text text-anchor="start" x="615.5" y="-327.2" font-family="DejaVu Sans" font-size="11.00">FK objetivo tipado · XOR¹</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="610.5,-297 610.5,-319 831.5,-319 831.5,-297 610.5,-297"/>
+<text text-anchor="start" x="615.5" y="-305.2" font-family="DejaVu Sans" font-size="11.00">tipo, ocurrido_en, registrado_en</text>
+<polygon fill="#ffffff" stroke="transparent" points="610.5,-275 610.5,-297 831.5,-297 831.5,-275 610.5,-275"/>
+<text text-anchor="start" x="615.5" y="-283.2" font-family="DejaVu Sans" font-size="11.00">estado_previo, estado_nuevo, motivo</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="610.5,-253 610.5,-275 831.5,-275 831.5,-253 610.5,-253"/>
+<text text-anchor="start" x="615.5" y="-261.2" font-family="DejaVu Sans" font-size="11.00">ubicacion, origen, clave_idempotencia</text>
+<polygon fill="none" stroke="#a1b6c6" points="609,-252 609,-394 832,-394 832,-252 609,-252"/>
+</g>
+<!-- i -->
+<g id="node9" class="node">
+<title>i</title>
+<polygon fill="#724b85" stroke="transparent" points="357.5,-363 357.5,-393 583.5,-393 583.5,-363 357.5,-363"/>
+<text text-anchor="start" x="435" y="-376.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">INCIDENCIA</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="357.5,-341 357.5,-363 583.5,-363 583.5,-341 357.5,-341"/>
+<text text-anchor="start" x="362.5" y="-349.2" font-family="DejaVu Sans" font-size="11.00">PK id · FK proyecto_id</text>
+<polygon fill="#ffffff" stroke="transparent" points="357.5,-319 357.5,-341 583.5,-341 583.5,-319 357.5,-319"/>
+<text text-anchor="start" x="362.5" y="-327.2" font-family="DejaVu Sans" font-size="11.00">FK objetivo tipado · XOR¹</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="357.5,-297 357.5,-319 583.5,-319 583.5,-297 357.5,-297"/>
+<text text-anchor="start" x="362.5" y="-305.2" font-family="DejaVu Sans" font-size="11.00">FK abierta_por, asignada_a → USUARIO</text>
+<polygon fill="#ffffff" stroke="transparent" points="357.5,-275 357.5,-297 583.5,-297 583.5,-275 357.5,-275"/>
+<text text-anchor="start" x="362.5" y="-283.2" font-family="DejaVu Sans" font-size="11.00">categoria, gravedad, estado, motivo</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="357.5,-253 357.5,-275 583.5,-275 583.5,-253 357.5,-253"/>
+<text text-anchor="start" x="362.5" y="-261.2" font-family="DejaVu Sans" font-size="11.00">abierta_en, resuelta_en</text>
+<polygon fill="none" stroke="#a1b6c6" points="356.5,-252 356.5,-394 584.5,-394 584.5,-252 356.5,-252"/>
+</g>
+</g>
+</svg>
+</div><figcaption>E-R 3 · Actores, documentos, historial e incidencias <a class="download" download="05_er_trazabilidad.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwpwIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiM0NjU0NzAiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlBST1lFQ1RPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkPC9URD48L1RSPjwvVEFCTEU+Pl07Cm8gW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzQ2NTQ3MCIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+T1JHQU5JWkFDSU9OPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5ub21icmUsIHJlZmVyZW5jaWE8L1REPjwvVFI+PC9UQUJMRT4+XTsKdSBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjNDY1NDcwIiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5VU1VBUklPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5GSyBvcmdhbml6YWNpb25faWQsIG9wY2lvbmFsPC9URD48L1RSPjwvVEFCTEU+Pl07CmEgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzQ2NTQ3MCIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+QUNDRVNPX1BST1lFQ1RPPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLL0ZLIHByb3llY3RvX2lkLCB1c3VhcmlvX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5QSyByb2w8L1REPjwvVFI+PC9UQUJMRT4+XTsKZCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjNzI0Yjg1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5ET0NVTUVOVE88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UEsgaWQgwrcgRksgcHJveWVjdG9faWQ8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPnRpcG8sIHRpdHVsbywgcmVmZXJlbmNpYTwvVEQ+PC9UUj48L1RBQkxFPj5dOwp2IFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiM3MjRiODUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkRPQ1VNRU5UT19WRVJTSU9OPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIGRvY3VtZW50b19pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+RksgdXN1YXJpb19pZCDCtyBudW1lcm8sIHVyaSwgaGFzaDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+cmVnaXN0cmFkYV9lbiwgZXN0YWRvX3ZhbGlkYWNpb248L1REPjwvVFI+PC9UQUJMRT4+XTsKaiBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjNzI0Yjg1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5ET0NVTUVOVE9fVklOQ1VMTzwvQj48L0ZPTlQ+PC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5QSyBpZCDCtyBGSyBkb2N1bWVudG9fdmVyc2lvbl9pZDwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+Rksgb2JqZXRpdm8gdGlwYWRvIMK3IFhPUsK5PC9URD48L1RSPjwvVEFCTEU+Pl07CmUgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzcyNGI4NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+RVZFTlRPX1RSQVpBPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPlBLIGlkIMK3IEZLIHByb3llY3RvX2lkLCB1c3VhcmlvX2lkPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5GSyBvYmpldGl2byB0aXBhZG8gwrcgWE9Swrk8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPnRpcG8sIG9jdXJyaWRvX2VuLCByZWdpc3RyYWRvX2VuPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5lc3RhZG9fcHJldmlvLCBlc3RhZG9fbnVldm8sIG1vdGl2bzwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+dWJpY2FjaW9uLCBvcmlnZW4sIGNsYXZlX2lkZW1wb3RlbmNpYTwvVEQ+PC9UUj48L1RBQkxFPj5dOwppIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiM3MjRiODUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPklOQ0lERU5DSUE8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UEsgaWQgwrcgRksgcHJveWVjdG9faWQ8L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPkZLIG9iamV0aXZvIHRpcGFkbyDCtyBYT1LCuTwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+RksgYWJpZXJ0YV9wb3IsIGFzaWduYWRhX2Eg4oaSIFVTVUFSSU88L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2ZmZmZmZiIgQ0VMTFBBRERJTkc9IjUiPmNhdGVnb3JpYSwgZ3JhdmVkYWQsIGVzdGFkbywgbW90aXZvPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmMWY2ZmEiIENFTExQQURESU5HPSI1Ij5hYmllcnRhX2VuLCByZXN1ZWx0YV9lbjwvVEQ+PC9UUj48L1RBQkxFPj5dOwpvIC0+IHUgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVlb2RvdCwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CnAgLT4gYSBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwp1IC0+IGEgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKcCAtPiBkIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CmQgLT4gdiBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwp1IC0+IHYgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSJhdXRvciJdOwp2IC0+IGogW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSIiXTsKcCAtPiBlIFtkaXI9Ym90aCwgYXJyb3d0YWlsPXRlZXRlZSwgYXJyb3doZWFkPWNyb3dvZG90LCBsYWJlbD0iIl07CnUgLT4gZSBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9ImF1dG9yIl07CnAgLT4gaSBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWV0ZWUsIGFycm93aGVhZD1jcm93b2RvdCwgbGFiZWw9IiJdOwp1IC0+IGkgW2Rpcj1ib3RoLCBhcnJvd3RhaWw9dGVldGVlLCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSJhYnJlIl07CnUgLT4gaSBbZGlyPWJvdGgsIGFycm93dGFpbD10ZWVvZG90LCBhcnJvd2hlYWQ9Y3Jvd29kb3QsIGxhYmVsPSJhdGllbmRlIl07Cn0K">Descargar fuente DOT</a></figcaption></figure>
+<p><strong>¹ Destino tipado.</strong> Cada vínculo, evento o incidencia apunta a un solo registro del mismo proyecto. Se implementa con claves foráneas explícitas y una comprobación de exclusión (XOR). Los destinos iniciales de documento son revisión técnica, liberación, ficha de embalaje, bulto, envío, recepción y evento. Los destinos iniciales de eventos e incidencias son componente, línea de suministro, liberación, bulto, envío y recepción. Se usa la versión documental concreta para conservar la evidencia histórica.</p>
+<h3>Datos que respaldan las validaciones</h3>
+<div class="table"><table><thead><tr><th>Registro auxiliar</th><th>Campos principales</th><th>Relación y alcance</th></tr></thead><tbody>
+<tr><td><code>OBSERVACION_MEDIDA</code></td><td>PK id · FK revision_id o bulto_id · magnitud, valor, unidad, método, calidad, fuente, fecha, FK autor_id · estado de verificación.</td><td>Una revisión o bulto puede tener varias observaciones para la misma magnitud. Una validación selecciona la observación aplicable y deja las demás consultables.</td></tr>
+<tr><td><code>COMPROBACION_ENVIO</code></td><td>PK id · FK envio_id, validada_por · requisito, referencia_fuente, version_criterio, vigencia, resultado, bloqueante, validada_en · FK documento_version_id opcional.</td><td>Un envío tiene cero o más comprobaciones. Si cambia su ruta, carga o criterio aplicable, se repite la evaluación y se conserva la anterior. El MVP admite registrar la revisión manual.</td></tr>
+</tbody></table></div>
+<h3>Convenciones para implementar el esquema</h3>
+<ul>
+<li><strong>Identidad y unicidad.</strong> ID LogiBIM global, opaco e inmutable. Código de bulto y referencia de modelo únicos dentro del proyecto. Número único dentro del componente, modelo BIM o documento que versiona. Enlace único por versión BIM, esquema e ID externo. Pareja pedido–componente única y, para el MVP, una línea de suministro activa por componente.</li>
+<li><strong>Unidades.</strong> Dimensiones en mm, masas en kg con decimal y volumen de la envolvente en m³ calculado cuando se conocen las tres dimensiones. Separar masa neta del componente y masa bruta del bulto. Cuando falte un valor, registrar desconocido. En medidas y pesos operativos registrar también fuente, fecha, autor y calidad declarada, estimada o medida.</li>
+<li><strong>Integridad.</strong> Asegurar el mismo proyecto en todas las relaciones cruzadas. Aplicar las restricciones de actividad y unicidad en base de datos, o con bloqueo transaccional cuando dependan de otras tablas. La revisión de una liberación o solicitud debe pertenecer al componente de su línea. La ficha de embalaje aplicada debe corresponder a una revisión presente en el bulto. Para bultos mixtos, la ficha es opcional y el plan específico se documenta en el bulto.</li>
+<li><strong>Histórico.</strong> Guardar la masa bruta de salida en la asignación bulto–envío. La baja de un contenido registra el momento de apertura o retirada, conservando su composición a fecha de salida. Tras cerrar el bulto se inmovilizan las medidas, la masa, la apilabilidad y su composición logística. Si hay que reembalar, se retira el bulto de la planificación y se registra uno nuevo. Las expediciones históricas conservan sus vínculos.</li>
+<li><strong>Extensión de ciclo de vida.</strong> El primer corte registra mantenimiento, desmontaje y decisión de reutilización como eventos del componente. El evento añade ubicación y puede enlazar versiones documentales como evidencia. Cuando se necesiten planes, frecuencias, materiales de embalaje desglosados o métricas ambientales comparables, se añadirán tablas específicas. Un retorno usa un nuevo envío con sentido <em>retorno</em>.</li>
+</ul>
+</section>
+
+<section id="reglas">
+<h2>4. Reglas de negocio y pruebas</h2>
+<p>Las reglas identifican la condición, el efecto esperado y un ejemplo de aceptación. Las alertas de planificación se distinguen de los bloqueos que impiden ejecutar una operación.</p>
+<div class="table"><table>
+<thead><tr><th>Regla</th><th>Comportamiento propuesto</th><th>Prueba de aceptación</th></tr></thead>
+<tbody>
+<tr><td><strong>RN01</strong> Identidad</td><td>El QR o enlace y <code>Pset_LogiBIM.ID_LogiBIM</code> resuelven la misma unidad. Si un elemento importado trae un ID conocido, se enlaza dentro de su proyecto. Si falta el ID o hay conflicto, queda en revisión manual.</td><td>Una segunda exportación cambia el identificador externo y conserva el ID LogiBIM. La ficha sigue siendo la misma. Un ID de otro proyecto se rechaza.</td></tr>
+<tr><td><strong>RN02</strong> Datos de origen distinto</td><td>Un dato técnico importado puede proponer una nueva revisión. Los valores operativos medidos y las revisiones aprobadas conservan su origen y su histórico. Un conflicto en datos necesarios para expedir requiere validación.</td><td>890 mm declarados y 998 mm en el nombre del DXF quedan identificados por fuente. La cifra candidata no sobrescribe la otra.</td></tr>
+<tr><td><strong>RN03</strong> Fabricación y cambios</td><td>Iniciar fabricación exige una liberación congelada con revisión técnica aprobada. Solo una liberación vigente por línea. Una sustitución crea otra liberación después de evaluar y aprobar el impacto. La revisión anterior y sus documentos quedan accesibles.</td><td>Publicar BIM v2 durante fabricación no altera la revisión liberada. Un cambio aceptado deja constancia de responsable, motivo y revisiones afectadas.</td></tr>
+<tr><td><strong>RN04</strong> Bulto y embalaje</td><td>Cerrar un bulto exige código, contenido, medidas exteriores, masa bruta, apilabilidad e instrucciones de manipulación si aplica. Impedir que una unidad figure en dos bultos activos. La adecuación de la base y el margen de protección se validan según el caso y la orientación autorizada.</td><td>El mostrador se embala una vez. Si se escanea en otro bulto activo, el alta se rechaza. Si la altura exterior falta, el bulto sigue en preparación.</td></tr>
+<tr><td><strong>RN05</strong> Expedición y capacidad</td><td>Para carretera, contrastar la suma de masas brutas de los bultos con la capacidad disponible confirmada por el responsable del transporte. Bloquear si falta la capacidad exigida, si se supera o si hay un bulto abierto. Un bulto solo puede estar asignado a un envío activo a la vez. El orden de carga es único dentro del envío si se informa.</td><td>Una masa superior a la capacidad bloquea la salida. Un bulto no apilable genera una restricción de planificación que debe verificarse antes de cargar.</td></tr>
+<tr><td><strong>RN06</strong> Documentación por escenario</td><td>Evaluar requisitos según origen, destino, modo, mercancía y tipo de embalaje. Conservar fuente, vigencia y versión del criterio usado. Una exigencia validada y marcada como bloqueante requiere evidencia documental aprobada. Si el escenario carece de criterio revisado, el responsable valida la lista antes de expedir.</td><td>Dos rutas con contextos distintos pueden generar listas diferentes. Adjuntar un borrador no satisface un requisito que exige evidencia aprobada.</td></tr>
+<tr><td><strong>RN07</strong> Recepción parcial</td><td>Registrar cada intento por bulto expedido con resultado aceptado, aceptado con daños o rechazado. Un rechazo permite reintento. Solo una aceptación final por asignación. La asignación deja de estar activa al aceptar la recepción o cancelar el envío antes de salida. Un rechazo mantiene el seguimiento abierto hasta reintentar o cerrar la incidencia y autorizar la devolución. Un envío queda recibido cuando todos sus bultos están aceptados. Daño y rechazo abren incidencia.</td><td>Recibir uno de dos bultos produce un envío parcialmente recibido. Un segundo intento duplicado con la misma clave deja una sola recepción.</td></tr>
+<tr><td><strong>RN08</strong> Instalación y retorno</td><td>La colocación o montaje en destino requiere recepción aceptada y resolución de incidencias que lo bloqueen. Registrar si se entregó ya ensamblado. Una devolución o reutilización conserva el ID físico y añade eventos y, si corresponde, un nuevo envío.</td><td>El mostrador llega ensamblado, se coloca en destino y más tarde puede viajar de vuelta sin perder el envío inicial.</td></tr>
+<tr><td><strong>RN09</strong> Autoría y concurrencia</td><td>Web y API ejecutan las mismas validaciones. Verificar rol y proyecto en el servidor. Aplicar cambio de estado y evento en una transacción, con comprobación de versión o bloqueo del registro. Una clave de idempotencia por proyecto y emisor protege los reintentos. Las correcciones añaden eventos compensatorios.</td><td>Dos operadores intentan expedir el mismo bulto. Solo una operación prospera y la auditoría permite identificar quién la realizó.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="flujo">
+<h2>5. Estados, responsabilidades y control de cambios</h2>
+<p>La ficha muestra un resumen de progreso calculado. La fabricación, el bulto, el envío y el componente tienen su propio estado. <em>Congelada</em> describe una liberación documental. <em>Con incidencia</em> es un indicador que puede coexistir con cualquier etapa.</p>
+<div class="table"><table>
+<thead><tr><th>Registro</th><th>Recorrido principal</th><th>Quién actualiza y valida</th></tr></thead>
+<tbody>
+<tr><td>Revisión técnica</td><td>Borrador → validada → sustituida para nuevas operaciones. Las liberaciones conservan la revisión que usaron.</td><td>Diseño/BIM aporta datos. Coordinación técnica valida.</td></tr>
+<tr><td>Pedido y fabricación</td><td>Pedido preparado → emitido → confirmado. Fabricación pendiente → en curso → finalizada. Liberación enviada → congelada → sustituida cuando se aprueba otra.</td><td>Compras registra el pedido. Fabricante informa del avance y confirma la revisión de trabajo. Coordinación autoriza sustituciones.</td></tr>
+<tr><td>Bulto</td><td>En preparación → cerrado → abierto o retirado. El contenido histórico permanece consultable.</td><td>Embalaje registra ficha, medidas, peso bruto y restricciones.</td></tr>
+<tr><td>Envío</td><td>Borrador → preparado → expedido → recepción parcial o recibido. Anulación antes de salida. Tras la salida, rechazo y devolución se registran con eventos.</td><td>Logística o transitario prepara. El responsable de expedición confirma la salida. Destino registra la recepción.</td></tr>
+<tr><td>Componente en destino</td><td>Pendiente de instalación → instalado/colocado → en servicio → retirado o disponible para reutilización.</td><td>Obra o destino confirma ubicación e instalación. Mantenimiento registra intervenciones y decisión de retorno o reutilización.</td></tr>
+</tbody></table></div>
+<figure><div class="diagram"><svg role="img" aria-label="Flujo de decisión · Cambio de una revisión ya enviada" width="653pt" height="371pt"
+ viewBox="0.00 0.00 652.66 371.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(10.08 361.08)">
+<title>G</title>
+<!-- a&#45;&gt;b -->
+<g id="edge1" class="edge">
+<title>a&#45;&gt;b</title>
+<path fill="none" stroke="#607487" d="M146.5,-296.68C146.5,-287.06 146.5,-276.04 146.5,-265.85"/>
+<polygon fill="#607487" stroke="#607487" points="149.13,-265.76 146.5,-258.26 143.88,-265.76 149.13,-265.76"/>
+</g>
+<!-- b&#45;&gt;c -->
+<g id="edge2" class="edge">
+<title>b&#45;&gt;c</title>
+<path fill="none" stroke="#607487" d="M141.04,-203.99C138.46,-191.7 135.34,-176.88 132.59,-163.74"/>
+<polygon fill="#607487" stroke="#607487" points="135.12,-163.03 131.01,-156.23 129.98,-164.11 135.12,-163.03"/>
+<text text-anchor="middle" x="144" y="-177.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">No</text>
+</g>
+<!-- b&#45;&gt;d -->
+<g id="edge3" class="edge">
+<title>b&#45;&gt;d</title>
+<path fill="none" stroke="#607487" d="M212.05,-203.99C246.92,-190.15 289.87,-173.11 325.76,-158.87"/>
+<polygon fill="#607487" stroke="#607487" points="326.84,-161.26 332.84,-156.06 324.9,-156.38 326.84,-161.26"/>
+<text text-anchor="middle" x="285" y="-177.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">Sí</text>
+</g>
+<!-- d&#45;&gt;e -->
+<g id="edge4" class="edge">
+<title>d&#45;&gt;e</title>
+<path fill="none" stroke="#607487" d="M363.12,-101.99C345.16,-88.78 323.22,-72.65 304.42,-58.82"/>
+<polygon fill="#607487" stroke="#607487" points="305.77,-56.56 298.17,-54.23 302.66,-60.79 305.77,-56.56"/>
+<text text-anchor="middle" x="357" y="-75.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">Aceptada</text>
+</g>
+<!-- d&#45;&gt;f -->
+<g id="edge5" class="edge">
+<title>d&#45;&gt;f</title>
+<path fill="none" stroke="#607487" d="M433.62,-101.99C451.45,-88.78 473.22,-72.65 491.89,-58.82"/>
+<polygon fill="#607487" stroke="#607487" points="493.63,-60.8 498.09,-54.23 490.5,-56.58 493.63,-60.8"/>
+<text text-anchor="middle" x="494" y="-75.8" font-family="DejaVu Sans" font-size="9.00" fill="#273f52">Rechazada</text>
+</g>
+<!-- a -->
+<g id="node1" class="node">
+<title>a</title>
+<polygon fill="#2c5979" stroke="transparent" points="37.5,-320 37.5,-350 256.5,-350 256.5,-320 37.5,-320"/>
+<text text-anchor="start" x="52" y="-333.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Se registra una nueva revisión</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="37.5,-298 37.5,-320 256.5,-320 256.5,-298 37.5,-298"/>
+<text text-anchor="start" x="42.5" y="-306.2" font-family="DejaVu Sans" font-size="11.00">Comparar con la liberación de la línea</text>
+<polygon fill="none" stroke="#a1b6c6" points="36,-297 36,-351 257,-351 257,-297 36,-297"/>
+</g>
+<!-- b -->
+<g id="node2" class="node">
+<title>b</title>
+<polygon fill="#2c5979" stroke="transparent" points="6.5,-227 6.5,-257 286.5,-257 286.5,-227 6.5,-227"/>
+<text text-anchor="start" x="77.5" y="-240.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">¿Afecta al suministro?</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="6.5,-205 6.5,-227 286.5,-227 286.5,-205 6.5,-205"/>
+<text text-anchor="start" x="11.5" y="-213.2" font-family="DejaVu Sans" font-size="11.00">Dimensiones, referencia, masa o documentación</text>
+<polygon fill="none" stroke="#a1b6c6" points="5.5,-204 5.5,-258 287.5,-258 287.5,-204 5.5,-204"/>
+</g>
+<!-- c -->
+<g id="node3" class="node">
+<title>c</title>
+<polygon fill="#1d5775" stroke="transparent" points="1.5,-125 1.5,-155 250.5,-155 250.5,-125 1.5,-125"/>
+<text text-anchor="start" x="63" y="-138.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Registrar la revisión</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="1.5,-103 1.5,-125 250.5,-125 250.5,-103 1.5,-103"/>
+<text text-anchor="start" x="6.5" y="-111.2" font-family="DejaVu Sans" font-size="11.00">La liberación anterior conserva su histórico</text>
+<polygon fill="none" stroke="#a1b6c6" points="0,-102 0,-156 251,-156 251,-102 0,-102"/>
+</g>
+<!-- d -->
+<g id="node4" class="node">
+<title>d</title>
+<polygon fill="#724b85" stroke="transparent" points="276.5,-125 276.5,-155 521.5,-155 521.5,-125 276.5,-125"/>
+<text text-anchor="start" x="314" y="-138.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Evaluar solicitud de cambio</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="276.5,-103 276.5,-125 521.5,-125 521.5,-103 276.5,-103"/>
+<text text-anchor="start" x="281.5" y="-111.2" font-family="DejaVu Sans" font-size="11.00">Fabricante y coordinación valoran impacto</text>
+<polygon fill="none" stroke="#a1b6c6" points="275,-102 275,-156 522,-156 522,-102 275,-102"/>
+</g>
+<!-- e -->
+<g id="node5" class="node">
+<title>e</title>
+<polygon fill="#136756" stroke="transparent" points="116.5,-23 116.5,-53 409.5,-53 409.5,-23 116.5,-23"/>
+<text text-anchor="start" x="196.5" y="-36.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Sustituir la liberación</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="116.5,-1 116.5,-23 409.5,-23 409.5,-1 116.5,-1"/>
+<text text-anchor="start" x="121.5" y="-9.2" font-family="DejaVu Sans" font-size="11.00">Crear otra y revisar embalaje, envío y documentos</text>
+<polygon fill="none" stroke="#a1b6c6" points="115,0 115,-54 410,-54 410,0 115,0"/>
+</g>
+<!-- f -->
+<g id="node6" class="node">
+<title>f</title>
+<polygon fill="#724b85" stroke="transparent" points="435.5,-23 435.5,-53 631.5,-53 631.5,-23 435.5,-23"/>
+<text text-anchor="start" x="444.5" y="-36.2" font-family="DejaVu Sans" font-weight="bold" font-size="11.00" fill="white">Mantener liberación anterior</text>
+<polygon fill="#f1f6fa" stroke="transparent" points="435.5,-1 435.5,-23 631.5,-23 631.5,-1 435.5,-1"/>
+<text text-anchor="start" x="440.5" y="-9.2" font-family="DejaVu Sans" font-size="11.00">Registrar el motivo del rechazo</text>
+<polygon fill="none" stroke="#a1b6c6" points="434.5,0 434.5,-54 632.5,-54 632.5,0 434.5,0"/>
+</g>
+</g>
+</svg>
+</div><figcaption>Flujo de decisión · Cambio de una revisión ya enviada <a class="download" download="06_control_de_cambios.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwphIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMyYzU5NzkiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlNlIHJlZ2lzdHJhIHVuYSBudWV2YSByZXZpc2nDs248L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+Q29tcGFyYXIgY29uIGxhIGxpYmVyYWNpw7NuIGRlIGxhIGzDrW5lYTwvVEQ+PC9UUj48L1RBQkxFPj5dOwpiIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMyYzU5NzkiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPsK/QWZlY3RhIGFsIHN1bWluaXN0cm8/PC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkRpbWVuc2lvbmVzLCByZWZlcmVuY2lhLCBtYXNhIG8gZG9jdW1lbnRhY2nDs248L1REPjwvVFI+PC9UQUJMRT4+XTsKYyBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SZWdpc3RyYXIgbGEgcmV2aXNpw7NuPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkxhIGxpYmVyYWNpw7NuIGFudGVyaW9yIGNvbnNlcnZhIHN1IGhpc3TDs3JpY288L1REPjwvVFI+PC9UQUJMRT4+XTsKZCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjNzI0Yjg1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5FdmFsdWFyIHNvbGljaXR1ZCBkZSBjYW1iaW88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+RmFicmljYW50ZSB5IGNvb3JkaW5hY2nDs24gdmFsb3JhbiBpbXBhY3RvPC9URD48L1RSPjwvVEFCTEU+Pl07CmUgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+U3VzdGl0dWlyIGxhIGxpYmVyYWNpw7NuPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkNyZWFyIG90cmEgeSByZXZpc2FyIGVtYmFsYWplLCBlbnbDrW8geSBkb2N1bWVudG9zPC9URD48L1RSPjwvVEFCTEU+Pl07CmYgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzcyNGI4NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+TWFudGVuZXIgbGliZXJhY2nDs24gYW50ZXJpb3I8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UmVnaXN0cmFyIGVsIG1vdGl2byBkZWwgcmVjaGF6bzwvVEQ+PC9UUj48L1RBQkxFPj5dOwphIC0+IGIgW2Fycm93aGVhZD1ub3JtYWwsIGxhYmVsPSIiXTsKYiAtPiBjIFthcnJvd2hlYWQ9bm9ybWFsLCBsYWJlbD0iTm8iXTsKYiAtPiBkIFthcnJvd2hlYWQ9bm9ybWFsLCBsYWJlbD0iU8OtIl07CmQgLT4gZSBbYXJyb3doZWFkPW5vcm1hbCwgbGFiZWw9IkFjZXB0YWRhIl07CmQgLT4gZiBbYXJyb3doZWFkPW5vcm1hbCwgbGFiZWw9IlJlY2hhemFkYSJdOwp9Cg==">Descargar fuente DOT</a></figcaption></figure>
+<p>Al aprobar una sustitución, revisar el impacto en planos, protección, peso, fechas y documentos. La nueva liberación pasa por envío y congelación antes de reanudar la fabricación con esa revisión. Si el cambio detectado afecta a una salida planificada, se vuelve a validar la preparación antes de expedir.</p>
+</section>
+
+<section id="equilan">
+<h2>6. Caso de prueba · Mostrador Equilan</h2>
+<div class="table"><table>
+<thead><tr><th>Registro</th><th>Qué se carga</th><th>Qué demuestra</th></tr></thead>
+<tbody>
+<tr><td>Componente y revisión técnica</td><td>ID de prueba <code>LB-EQ-0001</code>. Mostrador transportado ensamblado. Correo técnico de Equilan: 2240 × 722 × 890 mm y 380 kg netos. El nombre del DXF menciona 2240 × 720 × 998 mm. Registrar ambas referencias con estado de validación.</td><td>Una medida de diseño puede diferir de una medida de operación. Confirmar versión, configuración y medida física antes de usarla en decisiones logísticas.</td></tr>
+<tr><td>Ficha de embalaje</td><td>Palet de 2300 × 1000 mm, cuatro cartones de 1800 × 1800 mm, dos flejes longitudinales, tres transversales y film. Coste orientativo del conjunto de materiales: 41 € según el correo.</td><td>La base nominal supera al mueble en 60 × 278 mm en total, con las dimensiones declaradas y esa orientación. Registrar y comprobar el margen útil y el embalaje terminado.</td></tr>
+<tr><td>Bulto</td><td>Un bulto no apilable como condición del escenario. Altura exterior y peso bruto pendientes de medición. Anexar evidencia fotográfica y especificación de manipulación cuando se valide.</td><td>Los 380 kg se usan como peso neto del componente. El peso bruto y la altura exterior tienen su propio origen y validación.</td></tr>
+<tr><td>Envío y recepción</td><td>Probar una ruta de carretera con origen y destino definidos. Registrar remitente, consignatario y destino por separado, transportista, carga, entrega, número de bultos y documentos del escenario. El CMR de ejemplo sirve como referencia de campos.</td><td>Comprobar la capacidad disponible, los documentos, la salida y la recepción. Un segundo bulto de prueba permite validar una entrega parcial sin partir el mostrador.</td></tr>
+<tr><td>Colocación y retorno</td><td>Registrar entrega ensamblada y colocación en destino. Simular una intervención de mantenimiento y un envío de retorno para reutilización.</td><td>El mismo ID enlaza la expedición original, la ubicación, las incidencias y el retorno.</td></tr>
+</tbody></table></div>
+<p class="callout warn"><strong>Validación del piloto.</strong> La altura y la anchura discrepantes, el peso bruto, la altura exterior y las instrucciones de manipulación siguen pendientes de confirmación. El coste sirve para la simulación. La lista documental se aprueba para la ruta concreta con Comercio Internacional y el transitario.</p>
+</section>
+
+<section id="mvp">
+<h2>7. Primer alcance del prototipo</h2>
+<ol>
+<li><strong>Ficha de componente y consulta BIM.</strong> Alta, revisión, vínculo por identificador, enlace o QR y consulta por API. Importación selectiva de un IFC de prueba y cola de coincidencias pendientes como objetivo del piloto.</li>
+<li><strong>Suministro y control de cambios.</strong> Pedido y línea por unidad, revisión remitida a fabricación y solicitud de cambio con trazabilidad.</li>
+<li><strong>Embalaje y expedición.</strong> Ficha, bultos, agrupación en envío, peso bruto, orden de carga, comprobación de salida y recepción por bulto.</li>
+<li><strong>Documentación y auditoría.</strong> Versiones de documentos, permisos por proyecto, incidencias, línea temporal y validación de listas por escenario. Para el primer corte puede usarse una lista revisada manualmente con fecha, responsable y evidencia asociada. Las reglas automáticas configurables se incorporan al validar la acción 1.3.</li>
+<li><strong>Cierre del ciclo.</strong> Ubicación y colocación en destino, eventos de mantenimiento y retorno para reutilización, con ficha e historial consultables.</li>
+</ol>
+<div class="table"><table>
+<thead><tr><th>Resultado</th><th>Código operativo</th><th>Código Anexo I</th><th>Criterio de validación</th></tr></thead>
+<tbody>
+<tr><td>Modelo de datos</td><td>2.1</td><td>2.1</td><td>Modelo documentado con un mínimo de 5 entidades y 30 campos.</td></tr>
+<tr><td>Esquema de vinculación BIM</td><td>2.2</td><td>2.2</td><td>Esquema documentado y validado internamente.</td></tr>
+<tr><td>Prototipo funcional</td><td>2.3</td><td>3.1</td><td>Al menos 5 funcionalidades operativas en pruebas.</td></tr>
+<tr><td>Caso de uso y carga</td><td>2.5 / 2.6</td><td>4.1 / 4.2</td><td>Expedición, entrega/montaje y reutilización. Fichas para el 100 % de componentes principales.</td></tr>
+<tr><td>Integración BIM y prueba</td><td>2.4 / 3.3</td><td>3.2 / 2.3</td><td>Vincular y verificar el 100 % de componentes principales del piloto.</td></tr>
+</tbody></table></div>
+<h3>Decisiones pendientes antes de cerrar las primeras migraciones</h3>
+<ul>
+<li><strong>Equipo BIM y Equilan.</strong> Acordar qué cuenta como unidad trazable, cómo se identifica una sustitución física y cómo se divide un conjunto que requiere varios bultos.</li>
+<li><strong>Fabricación y logística.</strong> Confirmar quién autoriza la congelación y los cambios, quién mide el bulto y qué evidencia exige cada traspaso. Definir qué incidencias son bloqueantes.</li>
+<li><strong>Santurtzi y transitario.</strong> Validar rutas del piloto, documentación, restricciones y el tratamiento de embalajes y retornos. Registrar la fuente y vigencia de las reglas aprobadas.</li>
+<li><strong>Equipo de desarrollo.</strong> Acordar si el piloto cubre una expedición directa por envío o necesita tramos, transbordos y responsables distintos. La propuesta usa una expedición directa. La asignación de entidades a modelos Odoo se hará tras confirmar qué módulos se reutilizan.</li>
+</ul>
+</section>
+
+<section id="fuentes">
+<h2>8. Fuentes y alcance de la revisión</h2>
+<ol>
+<li><strong>S1 · Alcance aprobado.</strong> Anexo I de LogiBIM, acciones y objetivos OG2/OG3. El DOCX adjunto al proyecto es la plantilla general de la convocatoria. [<a href="https://drive.google.com/file/d/1IeaNGZ7WOUVo8JcR5f4heWCskE5LPOA4/view">Anexo I aprobado</a>]</li>
+<li><strong>S2 · Planificación operativa.</strong> Cronograma y ficha de gestión Tknika. Los códigos operativos y originales se han cotejado por descripción de cada acción, ya que la exportación del cronograma tipa algunos códigos originales como fechas. [<a href="https://docs.google.com/spreadsheets/d/1NEHQdIyZUaD2O54Gf_pQjiJY0-HH8uwIAN4vQ9Z3Zic/edit">CronogramaLogiBIM</a>] [<a href="https://drive.google.com/file/d/1aydayWyaHupK3wZ7mhJvFp1B_c1dA2vd/view">Ficha Tknika</a>]</li>
+<li><strong>S3 · BIM y necesidades.</strong> Entrevista BerriLan, informe de vigilancia 1.1 e informe 1.2 en desarrollo. Aportan ID común, fechas y estados de suministro, control de cambios y responsabilidades. [<a href="https://docs.google.com/document/d/1O9Y3mMA0pGxZCXdAg0HNbLvsvO5pKIbAhw1FWyYgP8E/edit">Entrevista BerriLan</a>] [<a href="https://docs.google.com/document/d/15R4dqAZp0e36VR93fwYXSQc9fxOwUq_4vJRudhtvpds/edit">Informe 1.1</a>] [<a href="https://docs.google.com/document/d/1j6XKKVNg1ILiScnSh0zDfw7MBcy3Fe6KAtZByIwSob0/edit">Informe 1.2</a>]</li>
+<li><strong>S4 · Operación real.</strong> Actas de visita a Embalan3 y Equilan, mapa de intercambios entre agentes y respuesta técnica de Equilan del 28 de octubre. En el material del caso se revisaron el plano/despiece, las facturas de materiales y un CMR de ejemplo. La comparación dimensional del DXF se limita a su nombre de archivo. [<a href="https://docs.google.com/document/d/12HhXeOxzepDndtCOKah3e5jE7x_pWbm-JVH1ML4nUhA/edit">Actas y visitas</a>] [<a href="https://drive.google.com/file/d/1_BEGJy1bpB37JKjXbTCp-Gs0f73Fs23t/view">Mapa de agentes</a>] [<a href="https://mail.google.com/mail/u/0/#all/1a14046f11aa8b93">Conversación Equilan</a>] [<a href="https://drive.google.com/drive/folders/1xot8iD_utCbhJWn6Q_RrhcukJ9yBEi5m">Caso Equilan</a>]</li>
+<li><strong>S5 · Arquitectura y comercio internacional.</strong> Esquema de arquitectura logística, decisiones del 8 de octubre sobre API REST y alcance de la acción 1.3. La tabla de requisitos del informe 1.3 está pendiente de completar. El mapa de agentes orienta la lista de campos y documentos que deben validarse. [<a href="https://drive.google.com/file/d/1T_agzhXeTzgjd6_0S8127dsgkFPoKdPl/view">Arquitectura logística</a>] [<a href="https://docs.google.com/document/d/1s9I5UawUhlCgWrDOVqSsjjfe4MDZTJIvhBk4RT-eC60/edit">Informe 1.3</a>]</li>
+</ol>
+</section>
+<footer>LogiBIM · Diseño funcional v0.1 · Diagramas vectoriales con fuentes DOT descargables</footer>
+</main>
 </body>
-</html> 
+</html>
