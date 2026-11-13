@@ -30,6 +30,11 @@ code{background:#e9f1f5;border-radius:3px;padding:.08em .24em;color:#1c4b64}smal
 footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 @media(max-width:650px){main,header>div,nav>div{width:calc(100% - 24px)}.diagram svg{min-width:660px}.table table{min-width:560px}header{padding:25px 0}}
 @media print{@page{size:A4 landscape;margin:11mm}body{background:white;font-size:10pt}main,header>div,nav>div{width:100%}header{padding:16px 0;color:var(--ink);background:white}.eyebrow,header p{color:var(--blue)}nav,.download{display:none}section{padding:12px 0}figure{break-inside:avoid}.diagram svg{max-height:155mm}tr,h2,h3{break-inside:avoid}h2,h3{break-after:avoid}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+summary{cursor:pointer;padding:14px 12px;border-radius:6px;color:var(--blue)}
+summary h2{display:inline;margin:0;font-size:1.45rem}
+summary:hover,summary:focus-visible{background:var(--pale)}
+summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.accordion-content{padding:4px 12px 0}
 </style>
 </head>
 <body>
@@ -41,7 +46,9 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <nav aria-label="Secciones"><div><a href="#alcance">Alcance</a><a href="#uml">Clases UML</a><a href="#er">Entidad–relación</a><a href="#reglas">Reglas</a><a href="#flujo">Estados y cambios</a><a href="#equilan">Caso Equilan</a><a href="#mvp">Prototipo</a><a href="#fuentes">Fuentes</a></div></nav>
 <main>
 <section id="alcance">
-<h2>1. Alcance y decisiones de diseño</h2>
+<details name="secciones-logibim" open>
+<summary><h2>1. Alcance y decisiones de diseño</h2></summary>
+<div class="accordion-content">
 <div class="callout"><strong>La ficha logística se consulta por componente.</strong> Reúne la revisión técnica, los vínculos BIM, el suministro, los bultos, las expediciones, la documentación y la trazabilidad. Se genera a partir de esos registros para que cada dato tenga un único responsable.</div>
 <p>El <strong>componente</strong> representa una unidad física trazable, prevista o existente. El <strong>bulto</strong> es la unidad de manipulación. El <strong>envío</strong> agrupa bultos que viajan juntos. La <strong>ficha de embalaje</strong> describe cómo embalar una revisión del componente. El bulto recoge lo que finalmente se preparó y midió.</p>
 <div class="table"><table>
@@ -53,10 +60,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <tr><td>Separar expediente y operación</td><td><em>Proyecto</em> en el esquema es la obra o caso logístico, como Equilan. Acciones, indicadores y fechas de la convocatoria pertenecen al seguimiento del proyecto de innovación.</td><td>Propuesta basada en S1 y S2.</td></tr>
 </tbody></table></div>
 <p class="muted">Las cardinalidades, estados, permisos y restricciones de esta versión son propuestas para validar. En cambios de propiedad física, la sustitución de una unidad se registrará con un ID nuevo y un vínculo con la unidad sustituida cuando el piloto confirme esa casuística. Los identificadores de acciones se conservan en dos columnas en la sección de alcance del prototipo.</p>
+</div>
+</details>
 </section>
 
 <section id="uml">
-<h2>2. Diagramas de clases UML</h2>
+<details name="secciones-logibim">
+<summary><h2>2. Diagramas de clases UML</h2></summary>
+<div class="accordion-content">
 <p>Las clases muestran quién mantiene cada dato y qué operaciones cambian el estado del proceso. Las multiplicidades indican cuántas instancias pueden relacionarse en cada extremo.</p>
 <figure><div class="diagram"><svg role="img" aria-label="UML 1 · Identidad, BIM y suministro" width="637pt" height="570pt"
  viewBox="0.00 0.00 637.16 570.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -399,10 +410,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 </svg>
 </div><figcaption>UML 2 · Embalaje, transporte y recepción <a class="download" download="02_uml_logistica.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwpjIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxZDU3NzUiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkNvbXBvbmVudGU8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+aWRMb2dpQklNPC9URD48L1RSPjwvVEFCTEU+Pl07CmUgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+RmljaGEgZGUgZW1iYWxhamU8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+bWF0ZXJpYWxlcyDCtyBwcm90ZWNjaW9uZXMgwrcgaW5zdHJ1Y2Npb25lczwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+dmFsaWRhclBhcmEocmV2aXNpw7NuKTwvVEQ+PC9UUj48L1RBQkxFPj5dOwpiIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMxMzY3NTYiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPkJ1bHRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmPDs2RpZ28gwrcgZGltZW5zaW9uZXMgZXh0ZXJpb3JlczwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZmZmZmZmIiBDRUxMUEFERElORz0iNSI+bWFzYSBicnV0YSDCtyBhcGlsYWJpbGlkYWQgwrcgY2VycmFyKCk8L1REPjwvVFI+PC9UQUJMRT4+XTsKY2IgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+Q29udGVuaWRvIGRlIGJ1bHRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPmFsdGEgwrcgYmFqYSDCtyByZXZpc2nDs24gdMOpY25pY2E8L1REPjwvVFI+PC9UQUJMRT4+XTsKbiBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5FbnbDrW88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+b3JpZ2VuIMK3IGRlc3Rpbm8gwrcgZmVjaGFzPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5jb21wcm9iYXJTYWxpZGEoKSDCtyBleHBlZGlyKCk8L1REPjwvVFI+PC9UQUJMRT4+XTsKbkIgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+QnVsdG8gZW4gZW52w61vPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPm9yZGVuQ2FyZ2EgwrcgbWFzYUJydXRhU2FsaWRhPC9URD48L1RSPjxUUj48VEQgQUxJR049IkxFRlQiIEJHQ09MT1I9IiNmZmZmZmYiIENFTExQQURESU5HPSI1Ij5jb25maXJtYXJSZWNlcGNpw7NuKCk8L1REPjwvVFI+PC9UQUJMRT4+XTsKeCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMTM2NzU2IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SZWNlcGNpw7NuIGRlIGJ1bHRvPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPnJlc3VsdGFkbyDCtyBmZWNoYSDCtyBldmlkZW5jaWE8L1REPjwvVFI+PC9UQUJMRT4+XTsKYyAtPiBjYiBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJzZSBlbWJhbGEiXTsKYiAtPiBjYiBbZGlyPW5vbmUsIHRhaWxsYWJlbD0iMSIsIGhlYWRsYWJlbD0iMC4uKiIsIGxhYmVsPSJjb250aWVuZSJdOwplIC0+IGIgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjAuLjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0ic2UgYXBsaWNhIl07Cm4gLT4gbkIgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0iYWdydXBhIl07CmIgLT4gbkIgW2Rpcj1ub25lLCB0YWlsbGFiZWw9IjEiLCBoZWFkbGFiZWw9IjAuLioiLCBsYWJlbD0ic2UgdHJhbnNwb3J0YSJdOwpuQiAtPiB4IFtkaXI9bm9uZSwgdGFpbGxhYmVsPSIxIiwgaGVhZGxhYmVsPSIwLi4qIiwgbGFiZWw9InNlIGNvbXBydWViYSJdOwp9Cg==">Descargar fuente DOT</a></figcaption></figure>
 <p>La ficha prescribe el embalaje. El bulto registra el resultado real, puede agrupar varios componentes y conserva su historial de expediciones. En UML, el contenido se asocia a la unidad. En el E‑R, apunta a su revisión exacta y llega a la unidad por esa relación.</p>
+</div>
+</details>
 </section>
 
 <section id="er">
-<h2>3. Diagramas entidad–relación</h2>
+<details name="secciones-logibim">
+<summary><h2>3. Diagramas entidad–relación</h2></summary>
+<div class="accordion-content">
 <p class="legend"><strong>PK</strong> clave primaria · <strong>FK</strong> clave foránea · <strong>UQ</strong> unicidad · <strong>opc.</strong> campo nullable. Pata de cuervo para múltiples registros, círculo para opcionalidad y barra para obligatoriedad. Las tablas repetidas conectan los tres diagramas.</p>
 <figure><div class="diagram"><svg role="img" aria-label="E-R 1 · Identidad, versiones y fabricación" width="732pt" height="680pt"
  viewBox="0.00 0.00 732.16 680.16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -1186,10 +1201,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <li><strong>Histórico.</strong> Guardar la masa bruta de salida en la asignación bulto–envío. La baja de un contenido registra el momento de apertura o retirada, conservando su composición a fecha de salida. Tras cerrar el bulto se inmovilizan las medidas, la masa, la apilabilidad y su composición logística. Si hay que reembalar, se retira el bulto de la planificación y se registra uno nuevo. Las expediciones históricas conservan sus vínculos.</li>
 <li><strong>Extensión de ciclo de vida.</strong> El primer corte registra mantenimiento, desmontaje y decisión de reutilización como eventos del componente. El evento añade ubicación y puede enlazar versiones documentales como evidencia. Cuando se necesiten planes, frecuencias, materiales de embalaje desglosados o métricas ambientales comparables, se añadirán tablas específicas. Un retorno usa un nuevo envío con sentido <em>retorno</em>.</li>
 </ul>
+</div>
+</details>
 </section>
 
 <section id="reglas">
-<h2>4. Reglas de negocio y pruebas</h2>
+<details name="secciones-logibim">
+<summary><h2>4. Reglas de negocio y pruebas</h2></summary>
+<div class="accordion-content">
 <p>Las reglas identifican la condición, el efecto esperado y un ejemplo de aceptación. Las alertas de planificación se distinguen de los bloqueos que impiden ejecutar una operación.</p>
 <div class="table"><table>
 <thead><tr><th>Regla</th><th>Comportamiento propuesto</th><th>Prueba de aceptación</th></tr></thead>
@@ -1204,10 +1223,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <tr><td><strong>RN08</strong> Instalación y retorno</td><td>La colocación o montaje en destino requiere recepción aceptada y resolución de incidencias que lo bloqueen. Registrar si se entregó ya ensamblado. Una devolución o reutilización conserva el ID físico y añade eventos y, si corresponde, un nuevo envío.</td><td>El mostrador llega ensamblado, se coloca en destino y más tarde puede viajar de vuelta sin perder el envío inicial.</td></tr>
 <tr><td><strong>RN09</strong> Autoría y concurrencia</td><td>Web y API ejecutan las mismas validaciones. Verificar rol y proyecto en el servidor. Aplicar cambio de estado y evento en una transacción, con comprobación de versión o bloqueo del registro. Una clave de idempotencia por proyecto y emisor protege los reintentos. Las correcciones añaden eventos compensatorios.</td><td>Dos operadores intentan expedir el mismo bulto. Solo una operación prospera y la auditoría permite identificar quién la realizó.</td></tr>
 </tbody></table></div>
+</div>
+</details>
 </section>
 
 <section id="flujo">
-<h2>5. Estados, responsabilidades y control de cambios</h2>
+<details name="secciones-logibim">
+<summary><h2>5. Estados, responsabilidades y control de cambios</h2></summary>
+<div class="accordion-content">
 <p>La ficha muestra un resumen de progreso calculado. La fabricación, el bulto, el envío y el componente tienen su propio estado. <em>Congelada</em> describe una liberación documental. <em>Con incidencia</em> es un indicador que puede coexistir con cualquier etapa.</p>
 <div class="table"><table>
 <thead><tr><th>Registro</th><th>Recorrido principal</th><th>Quién actualiza y valida</th></tr></thead>
@@ -1314,10 +1337,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 </svg>
 </div><figcaption>Flujo de decisión · Cambio de una revisión ya enviada <a class="download" download="06_control_de_cambios.dot" href="data:text/vnd.graphviz;base64,ZGlncmFwaCBHIHsKZ3JhcGggW3JhbmtkaXI9VEIsIGJnY29sb3I9InRyYW5zcGFyZW50IiwgcGFkPSIwLjE0Iiwgbm9kZXNlcD0iMC4zMyIsIHJhbmtzZXA9IjAuNTIiLCBzcGxpbmVzPXBvbHlsaW5lLCBvdXRwdXRvcmRlcj1lZGdlc2ZpcnN0XTsKbm9kZSBbc2hhcGU9cGxhaW4sIGZvbnRuYW1lPSJEZWphVnUgU2FucyIsIGZvbnRzaXplPTExXTsKZWRnZSBbZm9udG5hbWU9IkRlamFWdSBTYW5zIiwgZm9udHNpemU9OSwgY29sb3I9IiM2MDc0ODciLCBmb250Y29sb3I9IiMyNzNmNTIiLCBhcnJvd3NpemU9MC43NSwgbGFiZWxkaXN0YW5jZT0xLjddOwphIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMyYzU5NzkiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPlNlIHJlZ2lzdHJhIHVuYSBudWV2YSByZXZpc2nDs248L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+Q29tcGFyYXIgY29uIGxhIGxpYmVyYWNpw7NuIGRlIGxhIGzDrW5lYTwvVEQ+PC9UUj48L1RBQkxFPj5dOwpiIFtsYWJlbD08PFRBQkxFIEJPUkRFUj0iMSIgQ09MT1I9IiNhMWI2YzYiIENFTExCT1JERVI9IjAiIENFTExTUEFDSU5HPSIwIj48VFI+PFREIEJHQ09MT1I9IiMyYzU5NzkiIENFTExQQURESU5HPSI5Ij48Rk9OVCBDT0xPUj0id2hpdGUiPjxCPsK/QWZlY3RhIGFsIHN1bWluaXN0cm8/PC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkRpbWVuc2lvbmVzLCByZWZlcmVuY2lhLCBtYXNhIG8gZG9jdW1lbnRhY2nDs248L1REPjwvVFI+PC9UQUJMRT4+XTsKYyBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjMWQ1Nzc1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5SZWdpc3RyYXIgbGEgcmV2aXNpw7NuPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkxhIGxpYmVyYWNpw7NuIGFudGVyaW9yIGNvbnNlcnZhIHN1IGhpc3TDs3JpY288L1REPjwvVFI+PC9UQUJMRT4+XTsKZCBbbGFiZWw9PDxUQUJMRSBCT1JERVI9IjEiIENPTE9SPSIjYTFiNmM2IiBDRUxMQk9SREVSPSIwIiBDRUxMU1BBQ0lORz0iMCI+PFRSPjxURCBCR0NPTE9SPSIjNzI0Yjg1IiBDRUxMUEFERElORz0iOSI+PEZPTlQgQ09MT1I9IndoaXRlIj48Qj5FdmFsdWFyIHNvbGljaXR1ZCBkZSBjYW1iaW88L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+RmFicmljYW50ZSB5IGNvb3JkaW5hY2nDs24gdmFsb3JhbiBpbXBhY3RvPC9URD48L1RSPjwvVEFCTEU+Pl07CmUgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzEzNjc1NiIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+U3VzdGl0dWlyIGxhIGxpYmVyYWNpw7NuPC9CPjwvRk9OVD48L1REPjwvVFI+PFRSPjxURCBBTElHTj0iTEVGVCIgQkdDT0xPUj0iI2YxZjZmYSIgQ0VMTFBBRERJTkc9IjUiPkNyZWFyIG90cmEgeSByZXZpc2FyIGVtYmFsYWplLCBlbnbDrW8geSBkb2N1bWVudG9zPC9URD48L1RSPjwvVEFCTEU+Pl07CmYgW2xhYmVsPTw8VEFCTEUgQk9SREVSPSIxIiBDT0xPUj0iI2ExYjZjNiIgQ0VMTEJPUkRFUj0iMCIgQ0VMTFNQQUNJTkc9IjAiPjxUUj48VEQgQkdDT0xPUj0iIzcyNGI4NSIgQ0VMTFBBRERJTkc9IjkiPjxGT05UIENPTE9SPSJ3aGl0ZSI+PEI+TWFudGVuZXIgbGliZXJhY2nDs24gYW50ZXJpb3I8L0I+PC9GT05UPjwvVEQ+PC9UUj48VFI+PFREIEFMSUdOPSJMRUZUIiBCR0NPTE9SPSIjZjFmNmZhIiBDRUxMUEFERElORz0iNSI+UmVnaXN0cmFyIGVsIG1vdGl2byBkZWwgcmVjaGF6bzwvVEQ+PC9UUj48L1RBQkxFPj5dOwphIC0+IGIgW2Fycm93aGVhZD1ub3JtYWwsIGxhYmVsPSIiXTsKYiAtPiBjIFthcnJvd2hlYWQ9bm9ybWFsLCBsYWJlbD0iTm8iXTsKYiAtPiBkIFthcnJvd2hlYWQ9bm9ybWFsLCBsYWJlbD0iU8OtIl07CmQgLT4gZSBbYXJyb3doZWFkPW5vcm1hbCwgbGFiZWw9IkFjZXB0YWRhIl07CmQgLT4gZiBbYXJyb3doZWFkPW5vcm1hbCwgbGFiZWw9IlJlY2hhemFkYSJdOwp9Cg==">Descargar fuente DOT</a></figcaption></figure>
 <p>Al aprobar una sustitución, revisar el impacto en planos, protección, peso, fechas y documentos. La nueva liberación pasa por envío y congelación antes de reanudar la fabricación con esa revisión. Si el cambio detectado afecta a una salida planificada, se vuelve a validar la preparación antes de expedir.</p>
+</div>
+</details>
 </section>
 
 <section id="equilan">
-<h2>6. Caso de prueba · Mostrador Equilan</h2>
+<details name="secciones-logibim">
+<summary><h2>6. Caso de prueba · Mostrador Equilan</h2></summary>
+<div class="accordion-content">
 <div class="table"><table>
 <thead><tr><th>Registro</th><th>Qué se carga</th><th>Qué demuestra</th></tr></thead>
 <tbody>
@@ -1328,10 +1355,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <tr><td>Colocación y retorno</td><td>Registrar entrega ensamblada y colocación en destino. Simular una intervención de mantenimiento y un envío de retorno para reutilización.</td><td>El mismo ID enlaza la expedición original, la ubicación, las incidencias y el retorno.</td></tr>
 </tbody></table></div>
 <p class="callout warn"><strong>Validación del piloto.</strong> La altura y la anchura discrepantes, el peso bruto, la altura exterior y las instrucciones de manipulación siguen pendientes de confirmación. El coste sirve para la simulación. La lista documental se aprueba para la ruta concreta con Comercio Internacional y el transitario.</p>
+</div>
+</details>
 </section>
 
 <section id="mvp">
-<h2>7. Primer alcance del prototipo</h2>
+<details name="secciones-logibim">
+<summary><h2>7. Primer alcance del prototipo</h2></summary>
+<div class="accordion-content">
 <ol>
 <li><strong>Ficha de componente y consulta BIM.</strong> Alta, revisión, vínculo por identificador, enlace o QR y consulta por API. Importación selectiva de un IFC de prueba y cola de coincidencias pendientes como objetivo del piloto.</li>
 <li><strong>Suministro y control de cambios.</strong> Pedido y línea por unidad, revisión remitida a fabricación y solicitud de cambio con trazabilidad.</li>
@@ -1355,10 +1386,14 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <li><strong>Santurtzi y transitario.</strong> Validar rutas del piloto, documentación, restricciones y el tratamiento de embalajes y retornos. Registrar la fuente y vigencia de las reglas aprobadas.</li>
 <li><strong>Equipo de desarrollo.</strong> Acordar si el piloto cubre una expedición directa por envío o necesita tramos, transbordos y responsables distintos. La propuesta usa una expedición directa. La asignación de entidades a modelos Odoo se hará tras confirmar qué módulos se reutilizan.</li>
 </ul>
+</div>
+</details>
 </section>
 
 <section id="fuentes">
-<h2>8. Fuentes y alcance de la revisión</h2>
+<details name="secciones-logibim">
+<summary><h2>8. Fuentes y alcance de la revisión</h2></summary>
+<div class="accordion-content">
 <ol>
 <li><strong>S1 · Alcance aprobado.</strong> Anexo I de LogiBIM, acciones y objetivos OG2/OG3. El DOCX adjunto al proyecto es la plantilla general de la convocatoria. [<a href="https://drive.google.com/file/d/1IeaNGZ7WOUVo8JcR5f4heWCskE5LPOA4/view">Anexo I aprobado</a>]</li>
 <li><strong>S2 · Planificación operativa.</strong> Cronograma y ficha de gestión Tknika. Los códigos operativos y originales se han cotejado por descripción de cada acción, ya que la exportación del cronograma tipa algunos códigos originales como fechas. [<a href="https://docs.google.com/spreadsheets/d/1NEHQdIyZUaD2O54Gf_pQjiJY0-HH8uwIAN4vQ9Z3Zic/edit">CronogramaLogiBIM</a>] [<a href="https://drive.google.com/file/d/1aydayWyaHupK3wZ7mhJvFp1B_c1dA2vd/view">Ficha Tknika</a>]</li>
@@ -1366,8 +1401,39 @@ footer{padding:18px 0;color:var(--muted);font-size:.84rem}
 <li><strong>S4 · Operación real.</strong> Actas de visita a Embalan3 y Equilan, mapa de intercambios entre agentes y respuesta técnica de Equilan del 28 de octubre. En el material del caso se revisaron el plano/despiece, las facturas de materiales y un CMR de ejemplo. La comparación dimensional del DXF se limita a su nombre de archivo. [<a href="https://docs.google.com/document/d/12HhXeOxzepDndtCOKah3e5jE7x_pWbm-JVH1ML4nUhA/edit">Actas y visitas</a>] [<a href="https://drive.google.com/file/d/1_BEGJy1bpB37JKjXbTCp-Gs0f73Fs23t/view">Mapa de agentes</a>] [<a href="https://mail.google.com/mail/u/0/#all/1a14046f11aa8b93">Conversación Equilan</a>] [<a href="https://drive.google.com/drive/folders/1xot8iD_utCbhJWn6Q_RrhcukJ9yBEi5m">Caso Equilan</a>]</li>
 <li><strong>S5 · Arquitectura y comercio internacional.</strong> Esquema de arquitectura logística, decisiones del 8 de octubre sobre API REST y alcance de la acción 1.3. La tabla de requisitos del informe 1.3 está pendiente de completar. El mapa de agentes orienta la lista de campos y documentos que deben validarse. [<a href="https://drive.google.com/file/d/1T_agzhXeTzgjd6_0S8127dsgkFPoKdPl/view">Arquitectura logística</a>] [<a href="https://docs.google.com/document/d/1s9I5UawUhlCgWrDOVqSsjjfe4MDZTJIvhBk4RT-eC60/edit">Informe 1.3</a>]</li>
 </ol>
+</div>
+</details>
 </section>
 <footer>LogiBIM · Diseño funcional v0.1 · Diagramas vectoriales con fuentes DOT descargables</footer>
 </main>
+<script>
+function openSection() {
+    const section = document.getElementById(location.hash.slice(1));
+    const accordion = section?.querySelector('details');
+    if (!accordion) return;
+    accordion.open = true;
+    section.scrollIntoView();
+}
+window.addEventListener('hashchange', openSection);
+document.querySelector('nav').addEventListener('click', event => {
+    const link = event.target.closest('a');
+    if (link && link.hash === location.hash) openSection();
+});
+openSection();
+window.addEventListener('beforeprint', () => {
+    document.querySelectorAll('details[name="secciones-logibim"]').forEach(accordion => {
+        accordion.dataset.wasOpen = accordion.open;
+        accordion.removeAttribute('name');
+        accordion.open = true;
+    });
+});
+window.addEventListener('afterprint', () => {
+    document.querySelectorAll('details[data-was-open]').forEach(accordion => {
+        accordion.open = accordion.dataset.wasOpen === 'true';
+        accordion.name = 'secciones-logibim';
+        delete accordion.dataset.wasOpen;
+    });
+});
+</script>
 </body>
 </html>
